@@ -1,0 +1,42 @@
+// ============================================================
+// Family Admin v3.0 — Settings
+// ============================================================
+pluginManagement {
+    repositories {
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+        maven {
+            url 'https://chaquo.com/maven'
+        }
+    }
+}
+
+rootProject.name = "Family Admin"
+include ':app'
+
+// ============================================================
+// Gradle Version Info (for logging)
+// ============================================================
+gradle.rootProject {
+    ext {
+        appName = "Family Admin"
+        appVersion = "3.0.0"
+        appBuildDate = new Date().format("yyyy-MM-dd")
+    }
+}
