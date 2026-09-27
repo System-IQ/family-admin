@@ -1,6 +1,7 @@
 // ============================================================
 //  Family Admin v3.0 — App Module Build Configuration
 //  Tested & Verified Configuration
+//  Version: 3.0.0
 // ============================================================
 
 plugins {
@@ -35,15 +36,11 @@ android {
             useSupportLibrary true
         }
 
-        // ═══ Chaquopy — Python Configuration ═══
+        // ═══ Chaquopy — ABIs ═══
         ndk {
             abiFilters "arm64-v8a", "armeabi-v7a"
         }
     }
-
-    // ═══ Chaquopy — Python Packages ═══
-    // ملاحظة: هذا الجزء خاص بـ Chaquopy فقط
-    // سيتم تفعيله في المرحلة 3
 
     // ═══ Build Types ═══
     buildTypes {
@@ -121,16 +118,11 @@ android {
         checkReleaseBuilds false
         disable 'MissingTranslation', 'ExtraTranslation'
     }
-
-    // ═══ Dex Options ═══
-    dexOptions {
-        preDexLibraries false
-    }
 }
 
 // ═══════════════════════════════════════════════════════════
 //  🐍 CHAQUOPY — PYTHON CONFIGURATION
-//  (سيتم تفعيله في المرحلة 3 — الآن مؤقت)
+//  (التكوين الكامل — سيُفعّل عند إضافة ملفات Python)
 // ═══════════════════════════════════════════════════════════
 chaquopy {
     defaultConfig {
@@ -143,7 +135,8 @@ chaquopy {
             install "requests"
             install "python-dateutil"
             install "pytz"
-            install "firebase-admin"
+            
+            // ⚠️ firebase-admin محذوف — سنستخدم FCM عبر Kotlin
         }
     }
     productFlavors {
