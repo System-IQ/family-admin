@@ -1,0 +1,133 @@
+// ============================================================
+// Family Admin v3.0 — Root Build Configuration
+// ============================================================
+buildscript {
+    ext {
+        // ═══ SDK Versions ═══
+        compileSdkVersion = 34
+        targetSdkVersion = 34
+        minSdkVersion = 24
+
+        // ═══ Build Tools ═══
+        buildToolsVersion = "34.0.0"
+
+        // ═══ Kotlin ═══
+        kotlinVersion = "1.9.22"
+        coroutinesVersion = "1.7.3"
+
+        // ═══ Android Gradle Plugin ═══
+        agpVersion = "8.2.2"
+
+        // ═══ Chaquopy (Python) ═══
+        chaquopyVersion = "15.0.1"
+        pythonVersion = "3.11"
+
+        // ═══ AndroidX ═══
+        coreKtxVersion = "1.12.0"
+        appcompatVersion = "1.6.1"
+        materialVersion = "1.11.0"
+        constraintLayoutVersion = "2.1.4"
+        recyclerViewVersion = "1.3.2"
+        cardViewVersion = "1.0.0"
+        swipeRefreshVersion = "1.1.0"
+        viewPagerVersion = "1.0.0"
+        fragmentVersion = "1.6.2"
+        activityVersion = "1.8.2"
+        lifecycleVersion = "2.7.0"
+        navigationVersion = "2.7.7"
+        preferenceVersion = "1.2.1"
+        workManagerVersion = "2.9.0"
+        roomVersion = "2.6.1"
+
+        // ═══ Google Services ═══
+        googleServicesVersion = "4.4.1"
+        playServicesMapsVersion = "18.2.0"
+        playServicesLocationVersion = "21.1.0"
+        playServicesAuthVersion = "20.7.0"
+
+        // ═══ Firebase ═══
+        firebaseBomVersion = "32.7.4"
+        firebaseMessagingVersion = "23.4.1"
+        firebaseFirestoreVersion = "24.10.2"
+        firebaseAnalyticsVersion = "21.5.1"
+
+        // ═══ Networking ═══
+        okhttpVersion = "4.12.0"
+        retrofitVersion = "2.9.0"
+        gsonVersion = "2.10.1"
+
+        // ═══ Images ═══
+        glideVersion = "4.16.0"
+        coilVersion = "2.5.0"
+
+        // ═══ Charts ═══
+        mpAndroidChartVersion = "v3.1.0"
+
+        // ═══ Utils ═══
+        lombokVersion = "1.18.30"
+        securityCryptoVersion = "1.1.0-alpha06"
+        biometricVersion = "1.1.0"
+
+        // ═══ Testing ═══
+        junitVersion = "4.13.2"
+        mockitoVersion = "5.7.0"
+    }
+
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+
+    dependencies {
+        classpath "com.android.tools.build:gradle:$agpVersion"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "com.chaquo.python:gradle:$chaquopyVersion"
+        classpath "com.google.gms:google-services:$googleServicesVersion"
+
+        // Crashlytics (اختياري)
+        // classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
+    }
+}
+
+// ============================================================
+// Common Configuration for All Modules
+// ============================================================
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://chaquo.com/maven' }
+    }
+
+    // ═══ Gradle Options ═══
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.compilerArgs << "-Xlint:deprecation"
+    }
+}
+
+// ============================================================
+// Clean Task
+// ============================================================
+tasks.register('clean', Delete) {
+    delete rootProject.buildDir
+}
+
+// ============================================================
+// Log Project Info
+// ============================================================
+println """
+╔══════════════════════════════════════════════════╗
+║  Family Admin v3.0 — Build Configuration         ║
+╠══════════════════════════════════════════════════╣
+║  AGP:         $agpVersion
+║  Kotlin:      $kotlinVersion
+║  Chaquopy:    $chaquopyVersion
+║  Firebase:    $firebaseBomVersion
+║  Compile SDK: $compileSdkVersion
+║  Target SDK:  $targetSdkVersion
+║  Min SDK:     $minSdkVersion
+╚══════════════════════════════════════════════════╝
+"""
