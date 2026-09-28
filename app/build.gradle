@@ -77,8 +77,7 @@ android {
         jniLibs {
             // CRITICAL: extract .so files to nativeLibraryDir
             // without this, cloudflared binary cannot be exec()'d
-            // on Android 10+ (W^X protection)
-            useLegacyPackaging = true
+            // on Android 10+ (W^X protection
             keepDebugSymbols += ["**/libcloudflared.so"]
         }
     }
