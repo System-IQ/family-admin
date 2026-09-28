@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ═══════════════════════════════════════════════════════════════
+     Family Admin v3.0 — Adaptive Launcher Icon (Round)
+     Android 8.0+ (API 26+)
+     ═══════════════════════════════════════════════════════════════
+     
+     Purpose:
+     ─────────────────────────────────────────────────────────────
+     • Round variant of launcher icon
+     • Used by launchers that support "round" style
+     • (Pixel, some Samsung, some Xiaomi)
+     
+     Note:
+     ─────────────────────────────────────────────────────────────
+     • Structure identical to ic_launcher.xml
+     • Launcher chooses which to use
+     • Same 3 layers: background + foreground + monochrome
+     
+     ═══════════════════════════════════════════════════════════════
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ═══ Background Layer ═══ -->
+    <background android:drawable="@drawable/ic_launcher_background" />
+
+    <!-- ═══ Foreground Layer ═══ -->
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+
+    <!-- ═══ Monochrome Layer (Android 13+) ═══ -->
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+
+</adaptive-icon>
