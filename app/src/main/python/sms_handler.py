@@ -101,7 +101,7 @@ def build_location_sms(lat: float, lon: float,
     if accuracy is None:
         acc_str = ""
     else:
-        acc_str = f"{float(accuracy):.0f}"
+        acc_str = f"{float(accuracy):.1f}"
 
     body = "|".join([
         SMS_PREFIX,
