@@ -1,6 +1,27 @@
 # ═══════════════════════════════════════════════════════════════
 #  ULTRA FAMILY TRACKER v5.0 — Dispatch Queue Manager
 # ═══════════════════════════════════════════════════════════════
+#  Purpose:
+#    Manage outgoing message dispatch (FCM, SMS, alerts) with:
+#      - In-memory priority queues
+#      - Pluggable handlers (set from Kotlin or Python)
+#      - Exponential backoff on failure
+#      - Per-item max attempts
+#      - Graceful shutdown
+#
+#  Design:
+#    - Two queues: command dispatch + alert dispatch
+#    - Each queue has a worker thread
+#    - Handlers are registered by "kind" (e.g. "fcm", "sms")
+#    - If no handler is registered for a kind, items are logged + dropped
+#    - Stats are exposed for metrics
+#
+#  Note:
+#    FCM sending is done in Kotlin (Firebase Admin SDK is not available
+#    in Chaquopy). This module calls a handler that must be registered
+#    by the Kotlin side at app startup. If Kotlin does not register,
+#    the queue still works but items go to the log only.
+# ═══════════════════════════════════════════════════════════════
 
 import time
 import queue
@@ -9,16 +30,24 @@ from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, Callable, List
 
 
-DEFAULT_MAX_ATTEMPTS = 5
-DEFAULT_BACKOFF_BASE = 2.0
-DEFAULT_BACKOFF_MAX = 300.0
-WORKER_POLL_TIMEOUT = 1.0
+# ───────────────────────────────────────────────────────────────
+#  Config
+# ───────────────────────────────────────────────────────────────
 
+DEFAULT_MAX_ATTEMPTS = 5
+DEFAULT_BACKOFF_BASE = 2.0      # seconds
+DEFAULT_BACKOFF_MAX = 300.0     # 5 minutes
+WORKER_POLL_TIMEOUT = 1.0       # seconds
+
+
+# ───────────────────────────────────────────────────────────────
+#  Work item
+# ───────────────────────────────────────────────────────────────
 
 @dataclass(order=True)
 class WorkItem:
-    kind: str
-    target: str
+    kind: str                       # "command" | "alert"
+    target: str                     # device_id
     payload: Dict[str, Any] = field(compare=False)
     priority: int = field(default=5, compare=True)
     attempts: int = field(default=0, compare=False)
@@ -27,6 +56,10 @@ class WorkItem:
     last_error: Optional[str] = field(default=None, compare=False)
     item_id: Optional[str] = field(default=None, compare=False)
 
+
+# ───────────────────────────────────────────────────────────────
+#  Queue Manager
+# ───────────────────────────────────────────────────────────────
 
 class QueueManager:
 
@@ -38,16 +71,20 @@ class QueueManager:
         self._backoff_base = backoff_base
         self._backoff_max = backoff_max
 
+        # Priority queues (lower priority int = processed first)
         self._command_q: "queue.PriorityQueue[WorkItem]" = queue.PriorityQueue()
         self._alert_q: "queue.PriorityQueue[WorkItem]" = queue.PriorityQueue()
 
+        # Handlers
         self._command_handlers: Dict[str, Callable[[WorkItem], bool]] = {}
         self._alert_handlers: Dict[str, Callable[[WorkItem], bool]] = {}
 
+        # Threading
         self._running = False
         self._worker_threads: List[threading.Thread] = []
         self._lock = threading.Lock()
 
+        # Stats
         self._stats: Dict[str, int] = {
             "commands_enqueued": 0,
             "commands_sent": 0,
@@ -57,8 +94,16 @@ class QueueManager:
             "alerts_failed": 0,
         }
 
+    # ─────────────────────────────────────────────────────────
+    #  Handler registration
+    # ─────────────────────────────────────────────────────────
+
     def register_command_handler(self, name: str,
                                  handler: Callable[[WorkItem], bool]) -> None:
+        """
+        Register a handler for command dispatch.
+        handler(item) -> True on success, False on retryable failure.
+        """
         with self._lock:
             self._command_handlers[name] = handler
 
@@ -71,6 +116,10 @@ class QueueManager:
         with self._lock:
             self._command_handlers.clear()
             self._alert_handlers.clear()
+
+    # ─────────────────────────────────────────────────────────
+    #  Enqueue
+    # ─────────────────────────────────────────────────────────
 
     def enqueue_command(self, device_id: str, command_id: str,
                         command: str, payload: Optional[str] = None,
@@ -103,6 +152,10 @@ class QueueManager:
         with self._lock:
             self._stats["alerts_enqueued"] += 1
 
+    # ─────────────────────────────────────────────────────────
+    #  Lifecycle
+    # ─────────────────────────────────────────────────────────
+
     def start(self) -> None:
         if self._running:
             return
@@ -110,15 +163,13 @@ class QueueManager:
 
         cmd_thread = threading.Thread(
             target=self._worker_loop,
-            args=("command", self._command_q, self._command_handlers,
-                  "commands_sent", "commands_failed"),
+            args=("command", self._command_q, self._command_handlers, "commands_sent", "commands_failed"),
             name="QueueMgr-Command",
             daemon=True,
         )
         alert_thread = threading.Thread(
             target=self._worker_loop,
-            args=("alert", self._alert_q, self._alert_handlers,
-                  "alerts_sent", "alerts_failed"),
+            args=("alert", self._alert_q, self._alert_handlers, "alerts_sent", "alerts_failed"),
             name="QueueMgr-Alert",
             daemon=True,
         )
@@ -130,6 +181,10 @@ class QueueManager:
         self._running = False
         for t in self._worker_threads:
             t.join(timeout=timeout)
+
+    # ─────────────────────────────────────────────────────────
+    #  Worker
+    # ─────────────────────────────────────────────────────────
 
     def _worker_loop(self,
                      kind: str,
@@ -144,6 +199,7 @@ class QueueManager:
             except queue.Empty:
                 continue
 
+            # If we hit the max attempts, drop.
             if item.attempts >= self._max_attempts:
                 with self._lock:
                     self._stats[failed_key] += 1
@@ -152,12 +208,15 @@ class QueueManager:
                 q.task_done()
                 continue
 
+            # Wait until next_attempt_at
             now = time.time()
             if item.next_attempt_at > now:
+                # requeue and sleep briefly
                 q.put(item)
                 time.sleep(min(item.next_attempt_at - now, 1.0))
                 continue
 
+            # Pick handler: first registered wins; if none, drop with log.
             handler = None
             with self._lock:
                 for name, h in handlers.items():
@@ -171,6 +230,7 @@ class QueueManager:
                 q.task_done()
                 continue
 
+            # Try
             try:
                 ok = bool(handler(item))
             except Exception as e:
@@ -184,13 +244,16 @@ class QueueManager:
                 q.task_done()
             else:
                 item.attempts += 1
-                delay = min(self._backoff_base ** item.attempts,
-                            self._backoff_max)
+                delay = min(self._backoff_base ** item.attempts, self._backoff_max)
                 item.next_attempt_at = time.time() + delay
                 q.put(item)
                 self._log(f"🔁 Retry {kind} → {item.target} in {delay:.1f}s "
                           f"(attempt {item.attempts}/{self._max_attempts})")
                 q.task_done()
+
+    # ─────────────────────────────────────────────────────────
+    #  Diagnostics
+    # ─────────────────────────────────────────────────────────
 
     def stats(self) -> Dict[str, Any]:
         with self._lock:
@@ -208,6 +271,10 @@ class QueueManager:
         ts = datetime.now().strftime("%H:%M:%S")
         print(f"[{ts}] [QUEUE] {msg}", flush=True)
 
+
+# ───────────────────────────────────────────────────────────────
+#  Global singleton (created on first import)
+# ───────────────────────────────────────────────────────────────
 
 _manager: Optional[QueueManager] = None
 _manager_lock = threading.Lock()
@@ -233,6 +300,10 @@ def stop() -> None:
 def stats() -> Dict[str, Any]:
     return get_manager().stats()
 
+
+# ───────────────────────────────────────────────────────────────
+#  Kotlin-facing convenience wrappers
+# ───────────────────────────────────────────────────────────────
 
 def enqueue_command(device_id: str, command_id: str,
                     command: str, payload: Optional[str] = None,
