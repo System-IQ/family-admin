@@ -106,7 +106,7 @@
 
         <!-- ═══ Main Activity ═══ -->
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".MainActivity"
             android:exported="false"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
