@@ -143,9 +143,18 @@ def validate_location_batch_payload(data: Dict[str, Any]) -> Tuple[bool, Optiona
 
 
 ALLOWED_COMMANDS = {
-    "SEND_NOW", "ENABLE_GPS", "DISABLE_GPS", "LOCK_SCREEN",
-    "SOUND_ALERT", "SHOW_MESSAGE", "RESTART_APP", "SOS",
-    "PING", "GET_STATE", "SET_INTERVAL", "SET_BATTERY_SAVER",
+    "SEND_NOW",
+    "ENABLE_GPS",
+    "DISABLE_GPS",
+    "LOCK_SCREEN",
+    "SOUND_ALERT",
+    "SHOW_MESSAGE",
+    "RESTART_APP",
+    "SOS",
+    "PING",
+    "GET_STATE",
+    "SET_INTERVAL",
+    "SET_BATTERY_SAVER",
 }
 
 
@@ -199,8 +208,11 @@ def validate_geofence_payload(data: Dict[str, Any]) -> Tuple[bool, Optional[str]
 
 
 def parse_int_arg(
-    args: Dict[str, Any], key: str, default: int,
-    min_val: int, max_val: int,
+    args: Dict[str, Any],
+    key: str,
+    default: int,
+    min_val: int,
+    max_val: int,
 ) -> Tuple[bool, Optional[int], Optional[str]]:
     raw = args.get(key)
     if raw is None:
