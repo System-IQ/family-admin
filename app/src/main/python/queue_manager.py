@@ -234,7 +234,6 @@ def stats() -> Dict[str, Any]:
     return get_manager().stats()
 
 
-# Kotlin-facing wrappers
 def enqueue_command(device_id: str, command_id: str,
                     command: str, payload: Optional[str] = None,
                     priority: int = 5) -> None:
