@@ -11,10 +11,6 @@ from typing import Optional, List, Dict, Any, Iterator
 import config as cfg
 
 
-# ───────────────────────────────────────────────────────────────
-#  Connection management
-# ───────────────────────────────────────────────────────────────
-
 _local = threading.local()
 
 
@@ -58,10 +54,6 @@ def close_all() -> None:
             pass
         _local.conn = None
 
-
-# ───────────────────────────────────────────────────────────────
-#  Schema
-# ───────────────────────────────────────────────────────────────
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -287,10 +279,6 @@ CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_log(actor, timestamp DESC);
 """
 
 
-# ───────────────────────────────────────────────────────────────
-#  Utilities
-# ───────────────────────────────────────────────────────────────
-
 def _now_ms() -> int:
     import time
     return int(time.time() * 1000)
@@ -320,10 +308,6 @@ def init_db() -> None:
         with transaction():
             _set_schema_version(conn, cfg.DB_SCHEMA_VERSION)
 
-
-# ───────────────────────────────────────────────────────────────
-#  Devices
-# ───────────────────────────────────────────────────────────────
 
 def register_device(
     device_id: str,
@@ -398,10 +382,6 @@ def delete_device(device_id: str) -> None:
     with transaction() as conn:
         conn.execute("DELETE FROM devices WHERE device_id = ?", (device_id,))
 
-
-# ───────────────────────────────────────────────────────────────
-#  Locations
-# ───────────────────────────────────────────────────────────────
 
 def save_location(device_id: str, data: Dict[str, Any]) -> int:
     event_id = data.get("event_id") or ""
@@ -493,10 +473,6 @@ def count_locations(device_id: str, since: Optional[int] = None) -> int:
     return int(cur.fetchone()["n"])
 
 
-# ───────────────────────────────────────────────────────────────
-#  Commands
-# ───────────────────────────────────────────────────────────────
-
 def add_command(device_id: str, command: str, payload: Optional[str] = None,
                 ttl_ms: Optional[int] = None) -> str:
     import uuid
@@ -578,10 +554,6 @@ def get_command_history(device_id: str, limit: int = 100) -> List[Dict[str, Any]
     return [dict(r) for r in cur.fetchall()]
 
 
-# ───────────────────────────────────────────────────────────────
-#  Geofences
-# ───────────────────────────────────────────────────────────────
-
 def add_geofence(device_id: str, name: str, lat: float, lon: float,
                  radius: int = 200) -> int:
     now = _now_ms()
@@ -612,10 +584,6 @@ def delete_geofence(geofence_id: int) -> None:
         conn.execute("DELETE FROM geofences WHERE id = ?", (geofence_id,))
 
 
-# ───────────────────────────────────────────────────────────────
-#  Alerts
-# ───────────────────────────────────────────────────────────────
-
 def add_alert(device_id: str, alert_type: str, message: str,
               severity: str = "info") -> int:
     now = _now_ms()
@@ -639,10 +607,6 @@ def get_alerts(device_id: str, limit: int = 100) -> List[Dict[str, Any]]:
     return [dict(r) for r in cur.fetchall()]
 
 
-# ───────────────────────────────────────────────────────────────
-#  Battery log
-# ───────────────────────────────────────────────────────────────
-
 def log_battery(device_id: str, level: int, is_charging: bool,
                 temperature: Optional[float] = None) -> None:
     now = _now_ms()
@@ -656,10 +620,6 @@ def log_battery(device_id: str, level: int, is_charging: bool,
             (device_id, level, 1 if is_charging else 0, temperature, now),
         )
 
-
-# ───────────────────────────────────────────────────────────────
-#  Cleanup
-# ───────────────────────────────────────────────────────────────
 
 def cleanup_old_data() -> Dict[str, int]:
     now = _now_ms()
@@ -690,10 +650,6 @@ def vacuum() -> None:
     conn = _get_conn()
     conn.execute("VACUUM")
 
-
-# ───────────────────────────────────────────────────────────────
-#  Utilities
-# ───────────────────────────────────────────────────────────────
 
 def get_db_size_mb() -> float:
     try:
