@@ -19,17 +19,8 @@ import com.family.admin.R
  *  Family Admin v5.0 — Server Service
  *  ═══════════════════════════════════════════════════════════════
  *
- *  Purpose:
- *    Runs the Python Flask server as a Foreground Service so that
- *    Android keeps the app alive while the server is bound to a port.
- *
- *  Lifecycle:
- *    onCreate  → start python server thread
- *    onStart   → handle re-entry
- *    onDestroy → request Python stop_server()
- *
- *  Status:
- *    Exposed via a companion object so UI can query it.
+ *  Runs the Python Flask server as a Foreground Service.
+ *  After Python is up, auto-starts TunnelService.
  * ═══════════════════════════════════════════════════════════════
  */
 class ServerService : Service() {
@@ -39,7 +30,6 @@ class ServerService : Service() {
         private const val CHANNEL_ID = "family_server"
         private const val NOTIFICATION_ID = 9001
 
-        // Last known status — readable from UI
         @Volatile
         var isRunning: Boolean = false
             private set
@@ -75,10 +65,17 @@ class ServerService : Service() {
         Log.i(TAG, "onCreate")
         startForeground(NOTIFICATION_ID, buildNotification("Starting…"))
 
-        // Start Python server on a background thread
         workerThread = Thread {
             try {
                 startPythonServer()
+                // After Python is up, wait a bit and start the Tunnel service
+                try {
+                    Thread.sleep(2000)
+                    Log.i(TAG, "Auto-starting TunnelService from ServerService")
+                    TunnelService.start(this)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Tunnel auto-start failed: ${t.message}")
+                }
             } catch (t: Throwable) {
                 Log.e(TAG, "Python start failed", t)
                 startupError = t.message ?: t.javaClass.simpleName
