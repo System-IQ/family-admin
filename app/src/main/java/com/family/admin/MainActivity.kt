@@ -16,73 +16,76 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.chaquo.python.Python
 import com.family.admin.services.ServerService
+import com.family.admin.services.TunnelService
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import timber.log.Timber
 
 /**
  * ═══════════════════════════════════════════════════════════════
- *  Family Admin v5.0 — MainActivity
+ *  Family Admin v5.0 — MainActivity (Phase 4.7)
  *  ═══════════════════════════════════════════════════════════════
- *
- *  Responsibilities (Phase 4.5):
- *    • Start/stop ServerService on user action
- *    • Reflect real server status from ServerService
- *    • Request runtime permissions (notifications)
- *
- *  Not yet implemented (Phase 5+):
- *    • Dashboard UI
- *    • Device list
- *    • Maps
- * ═══════════════════════════════════════════════════════════════
  */
 class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
         private const val REQ_NOTIF = 1001
-        private const val STATUS_REFRESH_MS = 2_000L
+        private const val REFRESH_MS = 2_000L
     }
 
-    // Views
+    // Server views
     private lateinit var toolbar: Toolbar
-    private lateinit var tvStatus: TextView
-    private lateinit var tvResult: TextView
-    private lateinit var tvPort: TextView
-    private lateinit var tvError: TextView
-    private lateinit var btnToggle: Button
-    private lateinit var progressBar: CircularProgressIndicator
+    private lateinit var tvServerStatus: TextView
+    private lateinit var tvServerResult: TextView
+    private lateinit var tvServerPort: TextView
+    private lateinit var tvServerError: TextView
+    private lateinit var btnServerToggle: Button
+    private lateinit var progressServer: CircularProgressIndicator
 
-    // Refresh loop
+    // Tunnel views
+    private lateinit var tvTunnelStatus: TextView
+    private lateinit var tvTunnelUrl: TextView
+    private lateinit var tvTunnelError: TextView
+    private lateinit var btnTunnelToggle: Button
+    private lateinit var progressTunnel: CircularProgressIndicator
+
     private val handler = Handler(Looper.getMainLooper())
     private val refreshRunnable = object : Runnable {
         override fun run() {
-            renderStatus()
-            handler.postDelayed(this, STATUS_REFRESH_MS)
+            renderServer()
+            renderTunnel()
+            handler.postDelayed(this, REFRESH_MS)
         }
     }
-
-    // ═══════════════════════════════════════════════════════════
-    //  Lifecycle
-    // ═══════════════════════════════════════════════════════════
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        Log.i(TAG, "MainActivity created")
+        Log.i(TAG, "onCreate")
 
         bindViews()
         setupToolbar()
         requestNotificationPermissionIfNeeded()
 
-        // Auto-start the server on first launch
+        // Auto-start ServerService
         if (!ServerService.isRunning) {
             Log.i(TAG, "Auto-starting ServerService")
             ServerService.start(this)
         }
 
-        btnToggle.setOnClickListener { onToggleClicked() }
+        // Auto-start TunnelService (after 3s to let Python boot)
+        handler.postDelayed({
+            if (!TunnelService.isRunning) {
+                Log.i(TAG, "Auto-starting TunnelService")
+                startTunnelViaPython()
+            }
+        }, 3_000L)
+
+        btnServerToggle.setOnClickListener { onServerToggle() }
+        btnTunnelToggle.setOnClickListener { onTunnelToggle() }
     }
 
     override fun onResume() {
@@ -101,12 +104,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun bindViews() {
         toolbar = findViewById(R.id.toolbar)
-        tvStatus = findViewById(R.id.tvStatus)
-        tvResult = findViewById(R.id.tvResult)
-        tvPort = findViewById(R.id.tvPort)
-        tvError = findViewById(R.id.tvError)
-        btnToggle = findViewById(R.id.btnToggle)
-        progressBar = findViewById(R.id.progressBar)
+
+        tvServerStatus = findViewById(R.id.tvServerStatus)
+        tvServerResult = findViewById(R.id.tvServerResult)
+        tvServerPort = findViewById(R.id.tvServerPort)
+        tvServerError = findViewById(R.id.tvServerError)
+        btnServerToggle = findViewById(R.id.btnServerToggle)
+        progressServer = findViewById(R.id.progressServer)
+
+        tvTunnelStatus = findViewById(R.id.tvTunnelStatus)
+        tvTunnelUrl = findViewById(R.id.tvTunnelUrl)
+        tvTunnelError = findViewById(R.id.tvTunnelError)
+        btnTunnelToggle = findViewById(R.id.btnTunnelToggle)
+        progressTunnel = findViewById(R.id.progressTunnel)
     }
 
     private fun setupToolbar() {
@@ -116,60 +126,111 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  Button handler
+    //  Server toggle
     // ═══════════════════════════════════════════════════════════
 
-    private fun onToggleClicked() {
+    private fun onServerToggle() {
         if (ServerService.isRunning) {
-            Log.i(TAG, "User requested server stop")
             ServerService.stop(this)
             Toast.makeText(this, "Stopping server…", Toast.LENGTH_SHORT).show()
         } else {
-            Log.i(TAG, "User requested server start")
             ServerService.start(this)
             Toast.makeText(this, "Starting server…", Toast.LENGTH_SHORT).show()
         }
-        // status will refresh automatically
-        handler.postDelayed({ renderStatus() }, 500)
+        handler.postDelayed({ renderServer() }, 400)
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Status rendering
-    // ═══════════════════════════════════════════════════════════
-
-    private fun renderStatus() {
+    private fun renderServer() {
         val running = ServerService.isRunning
         val result = ServerService.lastResult
         val error = ServerService.startupError
 
-        // Status line
-        tvStatus.text = if (running) "🟢 Server: RUNNING" else "🔴 Server: STOPPED"
+        tvServerStatus.text = if (running) "🟢 Server: RUNNING" else "🔴 Server: STOPPED"
+        tvServerResult.text = "Last: $result"
+        tvServerPort.text = "Port: 5000 • /api/v1"
 
-        // Result line
-        tvResult.text = "Last result: $result"
-
-        // Port line
-        tvPort.text = "Port: 5000  •  API: /api/v1"
-
-        // Error line
         if (!error.isNullOrBlank()) {
-            tvError.visibility = View.VISIBLE
-            tvError.text = "⚠ $error"
+            tvServerError.visibility = View.VISIBLE
+            tvServerError.text = "⚠ $error"
         } else {
-            tvError.visibility = View.GONE
+            tvServerError.visibility = View.GONE
         }
 
-        // Progress bar — only if starting but not yet running
-        if (!running && result != "stopped" && result != "not_started") {
-            progressBar.visibility = View.VISIBLE
+        progressServer.visibility =
+            if (!running && result != "stopped" && result != "not_started") View.VISIBLE
+            else View.GONE
+
+        btnServerToggle.text = if (running) "🛑 Stop Server" else "▶ Start Server"
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Tunnel toggle — via Python bridge
+    // ═══════════════════════════════════════════════════════════
+
+    private fun onTunnelToggle() {
+        if (TunnelService.isRunning) {
+            stopTunnelViaPython()
         } else {
-            progressBar.visibility = View.GONE
+            startTunnelViaPython()
+        }
+        handler.postDelayed({ renderTunnel() }, 500)
+    }
+
+    private fun startTunnelViaPython() {
+        Thread {
+            try {
+                val py = Python.getInstance()
+                val mod = py.getModule("tunnel_manager")
+                val res = mod.callAttr("start_tunnel", "cloudflare")
+                Log.i(TAG, "Python start_tunnel → $res")
+            } catch (t: Throwable) {
+                Log.e(TAG, "startTunnelViaPython failed", t)
+            }
+        }.start()
+    }
+
+    private fun stopTunnelViaPython() {
+        Thread {
+            try {
+                val py = Python.getInstance()
+                val mod = py.getModule("tunnel_manager")
+                val res = mod.callAttr("stop_tunnel")
+                Log.i(TAG, "Python stop_tunnel → $res")
+            } catch (t: Throwable) {
+                Log.e(TAG, "stopTunnelViaPython failed", t)
+            }
+        }.start()
+    }
+
+    private fun renderTunnel() {
+        val running = TunnelService.isRunning
+        val url = TunnelService.publicUrl
+        val error = TunnelService.lastError
+
+        tvTunnelStatus.text = when {
+            running && !url.isNullOrBlank() -> "🟢 Tunnel: ACTIVE"
+            running -> "🟡 Tunnel: STARTING…"
+            else -> "🔴 Tunnel: STOPPED"
         }
 
-        // Button label
-        btnToggle.text = if (running) "🛑 Stop Server" else "▶ Start Server"
+        if (!url.isNullOrBlank()) {
+            tvTunnelUrl.visibility = View.VISIBLE
+            tvTunnelUrl.text = "🌐 $url"
+        } else {
+            tvTunnelUrl.visibility = View.GONE
+        }
 
-        Timber.d("Status: running=$running, result=$result, error=$error")
+        if (!error.isNullOrBlank()) {
+            tvTunnelError.visibility = View.VISIBLE
+            tvTunnelError.text = "⚠ $error"
+        } else {
+            tvTunnelError.visibility = View.GONE
+        }
+
+        progressTunnel.visibility =
+            if (running && url.isNullOrBlank()) View.VISIBLE else View.GONE
+
+        btnTunnelToggle.text = if (running) "🛑 Stop Tunnel" else "🌐 Start Tunnel"
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -181,7 +242,6 @@ class MainActivity : AppCompatActivity() {
             val granted = ContextCompat.checkSelfPermission(
                 this, Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
-
             if (!granted) {
                 ActivityCompat.requestPermissions(
                     this,
@@ -189,19 +249,6 @@ class MainActivity : AppCompatActivity() {
                     REQ_NOTIF
                 )
             }
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQ_NOTIF) {
-            val granted = grantResults.isNotEmpty() &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED
-            Timber.i("Notification permission granted=$granted")
         }
     }
 }
