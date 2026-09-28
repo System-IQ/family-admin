@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ═══════════════════════════════════════════════════════════════
+     Family Admin v3.0 — Colors Palette
+     Complete color system for Material Design 3
+     ═══════════════════════════════════════════════════════════════
+     Sections:
+       1. Primary Palette
+       2. Secondary Palette
+       3. Accent Colors
+       4. Status Colors
+       5. Route Colors (Tracking)
+       6. Device Status Colors
+       7. Alert Colors
+       8. Background & Surface
+       9. Text Colors
+       10. Divider & Border
+       11. Chart Colors
+       12. Button States
+       13. Dark Mode
+       14. Special Colors
+     ═══════════════════════════════════════════════════════════════
+-->
+<resources>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 1: PRIMARY PALETTE (Blue)
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="primary">#1976D2</color>
+    <color name="primary_dark">#0D47A1</color>
+    <color name="primary_light">#42A5F5</color>
+    <color name="primary_variant">#1565C0</color>
+    <color name="primary_50">#E3F2FD</color>
+    <color name="primary_100">#BBDEFB</color>
+    <color name="primary_200">#90CAF9</color>
+    <color name="primary_300">#64B5F6</color>
+    <color name="primary_400">#42A5F5</color>
+    <color name="primary_500">#2196F3</color>
+    <color name="primary_600">#1E88E5</color>
+    <color name="primary_700">#1976D2</color>
+    <color name="primary_800">#1565C0</color>
+    <color name="primary_900">#0D47A1</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 2: SECONDARY PALETTE (Teal)
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="secondary">#26A69A</color>
+    <color name="secondary_dark">#00897B</color>
+    <color name="secondary_light">#4DB6AC</color>
+    <color name="secondary_variant">#00897B</color>
+    <color name="secondary_50">#E0F2F1</color>
+    <color name="secondary_100">#B2DFDB</color>
+    <color name="secondary_200">#80CBC4</color>
+    <color name="secondary_300">#4DB6AC</color>
+    <color name="secondary_400">#26A69A</color>
+    <color name="secondary_500">#009688</color>
+    <color name="secondary_600">#00897B</color>
+    <color name="secondary_700">#00796B</color>
+    <color name="secondary_800">#00695C</color>
+    <color name="secondary_900">#004D40</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 3: ACCENT COLORS
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="accent">#FF7043</color>
+    <color name="accent_dark">#E64A19</color>
+    <color name="accent_light">#FFAB91</color>
+
+    <color name="tertiary">#7E57C2</color>
+    <color name="tertiary_dark">#5E35B1</color>
+    <color name="tertiary_light">#B39DDB</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 4: STATUS COLORS (Generic)
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="status_success">#4CAF50</color>
+    <color name="status_error">#F44336</color>
+    <color name="status_warning">#FF9800</color>
+    <color name="status_info">#2196F3</color>
+    <color name="status_neutral">#9E9E9E</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 5: ROUTE COLORS (for tracking)
+         ═══════════════════════════════════════════════════════════
+         Blue   = Fast (>20 km/h)
+         Yellow = Medium (5-20 km/h)
+         Red    = Slow/Stopped (<5 km/h)
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="route_fast">#2196F3</color>
+    <color name="route_fast_light">#64B5F6</color>
+    <color name="route_fast_dark">#1976D2</color>
+
+    <color name="route_medium">#FFC107</color>
+    <color name="route_medium_light">#FFD54F</color>
+    <color name="route_medium_dark">#FFA000</color>
+
+    <color name="route_slow">#F44336</color>
+    <color name="route_slow_light">#EF5350</color>
+    <color name="route_slow_dark">#D32F2F</color>
+
+    <color name="route_start">#4CAF50</color>
+    <color name="route_end">#E91E63</color>
+    <color name="route_stop">#F44336</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 6: DEVICE STATUS COLORS
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="device_online">#4CAF50</color>
+    <color name="device_online_bg">#E8F5E9</color>
+
+    <color name="device_recent">#FFC107</color>
+    <color name="device_recent_bg">#FFF8E1</color>
+
+    <color name="device_idle">#FF9800</color>
+    <color name="device_idle_bg">#FFF3E0</color>
+
+    <color name="device_offline">#F44336</color>
+    <color name="device_offline_bg">#FFEBEE</color>
+
+    <color name="device_unknown">#9E9E9E</color>
+    <color name="device_unknown_bg">#F5F5F5</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 7: ALERT COLORS
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="alert_critical">#D32F2F</color>
+    <color name="alert_critical_bg">#FFEBEE</color>
+
+    <color name="alert_high">#F44336</color>
+    <color name="alert_high_bg">#FFEBEE</color>
+
+    <color name="alert_medium">#FF9800</color>
+    <color name="alert_medium_bg">#FFF3E0</color>
+
+    <color name="alert_low">#FFC107</color>
+    <color name="alert_low_bg">#FFF8E1</color>
+
+    <color name="alert_info">#2196F3</color>
+    <color name="alert_info_bg">#E3F2FD</color>
+
+    <color name="alert_success">#4CAF50</color>
+    <color name="alert_success_bg">#E8F5E9</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 8: BACKGROUND & SURFACE
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="background">#F5F5F5</color>
+    <color name="background_light">#FAFAFA</color>
+    <color name="background_dark">#121212</color>
+
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_light">#FAFAFA</color>
+    <color name="surface_dark">#1E1E1E</color>
+    <color name="surface_variant">#EEEEEE</color>
+
+    <color name="card_background">#FFFFFF</color>
+    <color name="card_background_dark">#2A2A2A</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 9: TEXT COLORS
+         ═══════════════════════════════════════════════════════════ -->
+    <!-- Light Theme -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_tertiary">#9E9E9E</color>
+    <color name="text_hint">#BDBDBD</color>
+    <color name="text_disabled">#BDBDBD</color>
+    <color name="text_on_primary">#FFFFFF</color>
+    <color name="text_on_secondary">#FFFFFF</color>
+
+    <!-- Dark Theme -->
+    <color name="text_primary_dark">#FFFFFF</color>
+    <color name="text_secondary_dark">#B0B0B0</color>
+    <color name="text_tertiary_dark">#808080</color>
+    <color name="text_hint_dark">#666666</color>
+    <color name="text_disabled_dark">#4D4D4D</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 10: DIVIDER & BORDER
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="divider">#E0E0E0</color>
+    <color name="divider_dark">#2C2C2C</color>
+    <color name="border">#BDBDBD</color>
+    <color name="border_light">#E0E0E0</color>
+    <color name="border_dark">#424242</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 11: CHART COLORS
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="chart_1">#2196F3</color>
+    <color name="chart_2">#4CAF50</color>
+    <color name="chart_3">#FF9800</color>
+    <color name="chart_4">#9C27B0</color>
+    <color name="chart_5">#F44336</color>
+    <color name="chart_6">#00BCD4</color>
+    <color name="chart_7">#FFEB3B</color>
+    <color name="chart_8">#795548</color>
+    <color name="chart_9">#607D8B</color>
+    <color name="chart_10">#E91E63</color>
+
+    <color name="chart_grid">#E0E0E0</color>
+    <color name="chart_axis">#757575</color>
+    <color name="chart_background">#FFFFFF</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 12: BUTTON STATES
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="button_primary">#1976D2</color>
+    <color name="button_primary_pressed">#1565C0</color>
+    <color name="button_primary_disabled">#B0BEC5</color>
+
+    <color name="button_success">#4CAF50</color>
+    <color name="button_success_pressed">#388E3C</color>
+
+    <color name="button_danger">#F44336</color>
+    <color name="button_danger_pressed">#D32F2F</color>
+
+    <color name="button_warning">#FF9800</color>
+    <color name="button_warning_pressed">#F57C00</color>
+
+    <color name="button_neutral">#9E9E9E</color>
+    <color name="button_neutral_pressed">#757575</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 13: DARK MODE OVERRIDES
+         ═══════════════════════════════════════════════════════════ -->
+    <color name="primary_dark_theme">#90CAF9</color>
+    <color name="secondary_dark_theme">#80CBC4</color>
+    <color name="accent_dark_theme">#FFAB91</color>
+
+    <color name="ripple_light">#1F000000</color>
+    <color name="ripple_dark">#33FFFFFF</color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 14: SPECIAL COLORS
+         ═══════════════════════════════════════════════════════════ -->
+    <!-- Transparent & Base -->
+    <color name="transparent">#00000000</color>
+    <color name="transparent_50">#80000000</color>
+    <color name="transparent_25">#40000000</color>
+    <color name="transparent_10">#1A000000</color>
+
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="white_50">#80FFFFFF</color>
+
+    <!-- Grey Scale -->
+    <color name="grey_50">#FAFAFA</color>
+    <color name="grey_100">#F5F5F5</color>
+    <color name="grey_200">#EEEEEE</color>
+    <color name="grey_300">#E0E0E0</color>
+    <color name="grey_400">#BDBDBD</color>
+    <color name="grey_500">#9E9E9E</color>
+    <color name="grey_600">#757575</color>
+    <color name="grey_700">#616161</color>
+    <color name="grey_800">#424242</color>
+    <color name="grey_900">#212121</color>
+
+    <!-- Battery Colors -->
+    <color name="battery_full">#4CAF50</color>
+    <color name="battery_good">#8BC34A</color>
+    <color name="battery_medium">#FFC107</color>
+    <color name="battery_low">#FF9800</color>
+    <color name="battery_critical">#F44336</color>
+    <color name="battery_charging">#2196F3</color>
+
+    <!-- Map Overlay Colors -->
+    <color name="map_overlay">#331976D2</color>
+    <color name="map_geofence_stroke">#F44336</color>
+    <color name="map_geofence_fill">#33F44336</color>
+    <color name="map_heatmap_low">#332196F3</color>
+    <color name="map_heatmap_high">#FFD32F2F</color>
+
+    <!-- Shadow -->
+    <color name="shadow_light">#0D000000</color>
+    <color name="shadow_medium">#1F000000</color>
+    <color name="shadow_dark">#33000000</color>
+
+    <!-- Divider overrides -->
+    <color name="divider_transparent">#00000000</color>
+
+</resources>
