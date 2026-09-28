@@ -3,9 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.family.admin">
 
-    <!-- ═══════════════════════════════════════════════════════
-         PERMISSIONS
-         ═══════════════════════════════════════════════════════ -->
+    <!-- ═══ Permissions ═══ -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -19,12 +17,11 @@
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- ═══════════════════════════════════════════════════════
-         APPLICATION
-         ═══════════════════════════════════════════════════════ -->
+    <!-- ═══ Application ═══ -->
     <application
         android:name=".FamilyAdminApp"
         android:allowBackup="false"
+        android:extractNativeLibs="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -52,9 +49,15 @@
             android:screenOrientation="portrait" />
 
         <!-- ═══ Server Service (Foreground) ═══ -->
-        <!-- Runs the Python Flask server. -->
         <service
             android:name=".services.ServerService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- ═══ Tunnel Service (Foreground) ═══ -->
+        <service
+            android:name=".services.TunnelService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
@@ -68,7 +71,7 @@
             </intent-filter>
         </service>
 
-        <!-- ═══ FCM Default Notification Metadata ═══ -->
+        <!-- ═══ FCM Metadata ═══ -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification" />
