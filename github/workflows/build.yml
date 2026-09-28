@@ -1,6 +1,7 @@
 # ============================================================
-#  Family Admin v3.0 — GitHub Actions Build
-#  Complete build pipeline with Firebase + Chaquopy
+#  Family Admin v3.0 — GitHub Actions Build Pipeline
+#  Complete build with Firebase + Chaquopy + Android
+#  Version: 3.0.0
 # ============================================================
 name: Build Admin APK
 
@@ -11,50 +12,54 @@ on:
 
 jobs:
   build:
-    name: Build Family Admin
+    name: 🚀 Build Family Admin v3.0
     runs-on: ubuntu-22.04
     timeout-minutes: 60
 
     steps:
       # ═══════════════════════════════════════════════════════
-      #  1. Checkout Code
+      #  1. Checkout Repository
       # ═══════════════════════════════════════════════════════
-      - name: Checkout repository
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
       # ═══════════════════════════════════════════════════════
       #  2. Setup JDK 17
       # ═══════════════════════════════════════════════════════
-      - name: Setup JDK 17
+      - name: ☕ Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
       # ═══════════════════════════════════════════════════════
-      #  3. Setup Python 3.11 (for Chaquopy)
+      #  3. Setup Python 3.11 (Required for Chaquopy)
       # ═══════════════════════════════════════════════════════
-      - name: Setup Python 3.11
+      - name: 🐍 Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Verify Python
+      - name: 🔍 Verify Python Installation
         run: |
-          echo "python3 path: $(which python3)"
-          echo "python3 version: $(python3 --version)"
+          echo "═══════════════════════════════════════"
+          echo "🐍 Python Information"
+          echo "═══════════════════════════════════════"
+          which python3
+          python3 --version
           python3 -c "import sys; print('Executable:', sys.executable)"
+          echo ""
 
       # ═══════════════════════════════════════════════════════
       #  4. Setup Android SDK
       # ═══════════════════════════════════════════════════════
-      - name: Setup Android SDK
+      - name: 📱 Setup Android SDK
         uses: android-actions/setup-android@v3
 
       # ═══════════════════════════════════════════════════════
       #  5. Setup Gradle 8.4
       # ═══════════════════════════════════════════════════════
-      - name: Setup Gradle
+      - name: ⚙️ Setup Gradle 8.4
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.4
@@ -62,49 +67,121 @@ jobs:
       # ═══════════════════════════════════════════════════════
       #  6. Create local.properties
       # ═══════════════════════════════════════════════════════
-      - name: Create local.properties
+      - name: 📝 Create local.properties
         run: |
           echo "sdk.dir=${ANDROID_HOME}" > local.properties
+          echo "═══════════════════════════════════════"
+          echo "📁 local.properties:"
           cat local.properties
+          echo "═══════════════════════════════════════"
 
       # ═══════════════════════════════════════════════════════
-      #  7. Place Secret Files
+      #  7. Place Firebase Secret Files
       # ═══════════════════════════════════════════════════════
-      - name: Place Firebase secrets
+      - name: 🔐 Place Firebase secrets
         env:
           ADMIN_JSON: ${{ secrets.GOOGLE_SERVICES_ADMIN }}
           CLIENT_JSON: ${{ secrets.GOOGLE_SERVICES_CLIENT }}
           FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
         run: |
+          echo "═══════════════════════════════════════"
+          echo "🔐 Placing Firebase secrets..."
+          echo "═══════════════════════════════════════"
+          
+          # Ensure python directory exists
           mkdir -p app/src/main/python
-
-          # Admin google-services.json
-          python3 -c "import os; open('app/google-services.json','w').write(os.environ['ADMIN_JSON'])"
-
-          # Client google-services.json (for reference)
-          python3 -c "import os; open('app/client-google-services.json','w').write(os.environ['CLIENT_JSON'])"
-
-          # Firebase Admin SDK key (for Python)
-          python3 -c "import os; open('app/src/main/python/firebase-key.json','w').write(os.environ['FIREBASE_KEY'])"
-
-          echo "✅ Secrets placed"
-          ls -la app/*.json
-          ls -la app/src/main/python/*.json
+          
+          # Write google-services.json (Admin)
+          python3 << 'PYEOF'
+import os
+with open('app/google-services.json', 'w', encoding='utf-8') as f:
+    f.write(os.environ['ADMIN_JSON'])
+print("✅ app/google-services.json created")
+PYEOF
+          
+          # Write client google-services.json (for reference)
+          python3 << 'PYEOF'
+import os
+with open('app/client-google-services.json', 'w', encoding='utf-8') as f:
+    f.write(os.environ['CLIENT_JSON'])
+print("✅ app/client-google-services.json created")
+PYEOF
+          
+          # Write firebase-key.json (for Python)
+          python3 << 'PYEOF'
+import os
+with open('app/src/main/python/firebase-key.json', 'w', encoding='utf-8') as f:
+    f.write(os.environ['FIREBASE_KEY'])
+print("✅ app/src/main/python/firebase-key.json created")
+PYEOF
+          
+          echo ""
+          echo "═══════════════════════════════════════"
+          echo "📁 Placed Files:"
+          echo "═══════════════════════════════════════"
+          ls -la app/*.json 2>/dev/null || true
+          ls -la app/src/main/python/*.json 2>/dev/null || true
+          echo ""
 
       # ═══════════════════════════════════════════════════════
-      #  8. Build Debug APK
+      #  8. Validate Configuration
       # ═══════════════════════════════════════════════════════
-      - name: Build Debug APK
+      - name: ✅ Validate Configuration
         run: |
+          echo "═══════════════════════════════════════"
+          echo "🔍 Validating project structure..."
+          echo "═══════════════════════════════════════"
+          
+          # Check required files
+          for file in \
+            "settings.gradle" \
+            "build.gradle" \
+            "gradle.properties" \
+            "app/build.gradle" \
+            "app/google-services.json" \
+            "app/src/main/AndroidManifest.xml" \
+            "app/src/main/python/__init__.py"
+          do
+            if [ -f "$file" ]; then
+              echo "✅ $file"
+            else
+              echo "❌ MISSING: $file"
+            fi
+          done
+          echo ""
+
+      # ═══════════════════════════════════════════════════════
+      #  9. Cache Gradle
+      # ═══════════════════════════════════════════════════════
+      - name: 💾 Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # ═══════════════════════════════════════════════════════
+      #  10. Build Debug APK
+      # ═══════════════════════════════════════════════════════
+      - name: 🔨 Build Debug APK
+        run: |
+          echo "═══════════════════════════════════════"
+          echo "🔨 Building Family Admin v3.0..."
+          echo "═══════════════════════════════════════"
           gradle assembleDebug \
             --stacktrace \
             --no-daemon \
             --warning-mode all
+          echo ""
+          echo "✅ Build completed!"
 
       # ═══════════════════════════════════════════════════════
-      #  9. Show Build Output
+      #  11. Show Build Outputs
       # ═══════════════════════════════════════════════════════
-      - name: List build outputs
+      - name: 📊 List build outputs
         if: always()
         run: |
           echo "═══════════════════════════════════════"
@@ -113,14 +190,15 @@ jobs:
           find app/build/outputs -type f 2>/dev/null || echo "No outputs found"
           echo ""
           echo "═══════════════════════════════════════"
-          echo "📊 APK Size:"
+          echo "📏 APK Size:"
           echo "═══════════════════════════════════════"
           ls -lh app/build/outputs/apk/debug/ 2>/dev/null || true
+          echo ""
 
       # ═══════════════════════════════════════════════════════
-      #  10. Upload APK
+      #  12. Upload APK
       # ═══════════════════════════════════════════════════════
-      - name: Upload APK
+      - name: 📤 Upload APK
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -130,9 +208,9 @@ jobs:
           if-no-files-found: warn
 
       # ═══════════════════════════════════════════════════════
-      #  11. Upload Build Logs (on failure)
+      #  13. Upload Build Logs on Failure
       # ═══════════════════════════════════════════════════════
-      - name: Upload build logs
+      - name: 📋 Upload build logs
         uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -140,5 +218,6 @@ jobs:
           path: |
             app/build/outputs/logs/
             **/build/reports/
+            **/build/outputs/logs/
           retention-days: 7
           if-no-files-found: ignore
