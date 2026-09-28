@@ -1,3 +1,7 @@
+// ============================================================
+//  Family Admin v5.0 — App Module Build Configuration
+// ============================================================
+
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
@@ -15,10 +19,16 @@ android {
         minSdk 24
         targetSdk 34
         versionCode 1
-        versionName "3.0.0"
+        versionName "5.0.0"
         multiDexEnabled true
-        vectorDrawables { useSupportLibrary true }
-        ndk { abiFilters "arm64-v8a", "armeabi-v7a" }
+
+        vectorDrawables {
+            useSupportLibrary true
+        }
+
+        ndk {
+            abiFilters "arm64-v8a", "armeabi-v7a"
+        }
     }
 
     buildTypes {
@@ -64,6 +74,13 @@ android {
                 'META-INF/INDEX.LIST'
             ]
         }
+        jniLibs {
+            // CRITICAL: extract .so files to nativeLibraryDir
+            // without this, cloudflared binary cannot be exec()'d
+            // on Android 10+ (W^X protection)
+            useLegacyPackaging = true
+            keepDebugSymbols += ["**/libcloudflared.so"]
+        }
     }
 
     lint {
@@ -103,7 +120,6 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
-    implementation 'androidx.viewpager2:viewpager2:1.0.0'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
 
     // Navigation
@@ -126,16 +142,12 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:32.7.4')
     implementation 'com.google.firebase:firebase-messaging-ktx'
 
-    // Google Play Services
-    implementation 'com.google.android.gms:play-services-location:21.1.0'
-
     // Networking
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.google.code.gson:gson:2.10.1'
 
     // Coroutines
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3'
 
     // Logging
     implementation 'com.jakewharton.timber:timber:5.0.1'
