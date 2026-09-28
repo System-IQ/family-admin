@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ═══════════════════════════════════════════════════════════════
+     Family Admin v3.0 — Data Extraction Rules (ULTRA)
+     ═══════════════════════════════════════════════════════════════
+     
+     🎯 Purpose:
+     ─────────────────────────────────────────────────────────────
+     This file controls EXACTLY what data:
+       1. Gets backed up to Google Drive (Cloud Backup)
+       2. Gets transferred to a new device (Device Transfer)
+     
+     🔐 Security Principle:
+     ─────────────────────────────────────────────────────────────
+     • INCLUDE only: non-sensitive preferences
+     • EXCLUDE all: tokens, keys, pins, credentials, cache
+     
+     📊 Classification:
+     ─────────────────────────────────────────────────────────────
+     ✅ SAFE to backup:    UI prefs, theme, language, onboarding
+     ❌ NEVER backup:     FCM tokens, Firebase keys, PINs, DB
+     
+     ═══════════════════════════════════════════════════════════════
+-->
+<data-extraction-rules>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 1: CLOUD BACKUP (Google Drive)
+         ═══════════════════════════════════════════════════════════
+         When user enables "Backup to Google Drive"
+         ═══════════════════════════════════════════════════════════ -->
+    <cloud-backup>
+
+        <!-- ═══════════════════════════════════════════════════════
+             PART 1.A: INCLUDE (SAFE DATA)
+             ═══════════════════════════════════════════════════════ -->
+        
+        <!-- ✅ User Preferences (safe) -->
+        <include domain="sharedpref" path="user_prefs.xml" />
+        <include domain="sharedpref" path="settings_prefs.xml" />
+        <include domain="sharedpref" path="theme_prefs.xml" />
+        <include domain="sharedpref" path="language_prefs.xml" />
+        
+        <!-- ✅ Onboarding State (safe) -->
+        <include domain="sharedpref" path="onboarding_prefs.xml" />
+        
+        <!-- ✅ UI State (safe) -->
+        <include domain="sharedpref" path="ui_prefs.xml" />
+        
+        <!-- ✅ Non-sensitive database -->
+        <include domain="database" path="family_admin.db" />
+        
+        <!-- ✅ Debug logs (for support) -->
+        <include domain="file" path="logs/crash.log" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             PART 1.B: EXCLUDE (SENSITIVE DATA)
+             ═══════════════════════════════════════════════════════ -->
+        
+        <!-- ❌ CRITICAL: Security Tokens -->
+        <exclude domain="sharedpref" path="fcm_token.xml" />
+        <exclude domain="sharedpref" path="auth_prefs.xml" />
+        <exclude domain="sharedpref" path="pin_prefs.xml" />
+        <exclude domain="sharedpref" path="encryption.xml" />
+        <exclude domain="sharedpref" path="session_prefs.xml" />
+        
+        <!-- ❌ CRITICAL: Firebase Keys -->
+        <exclude domain="file" path="firebase-key.json" />
+        <exclude domain="file" path="google-services.json" />
+        <exclude domain="file" path="." />
+        
+        <!-- ❌ CRITICAL: Databases with sensitive data -->
+        <exclude domain="database" path="secure_data.db" />
+        <exclude domain="database" path="devices.db" />
+        <exclude domain="database" path="locations.db" />
+        <exclude domain="database" path="tracker.db" />
+        <exclude domain="database" path="tracker.db-shm" />
+        <exclude domain="database" path="tracker.db-wal" />
+        
+        <!-- ❌ CRITICAL: Python files -->
+        <exclude domain="file" path="python/" />
+        <exclude domain="file" path="__pycache__/" />
+        <exclude domain="file" path="*.pyc" />
+        
+        <!-- ❌ CRITICAL: Certificates -->
+        <exclude domain="file" path="*.pem" />
+        <exclude domain="file" path="*.key" />
+        <exclude domain="file" path="*.crt" />
+        <exclude domain="file" path="*.p12" />
+        
+        <!-- ❌ Logs (may contain sensitive data) -->
+        <exclude domain="file" path="logs/" />
+        <exclude domain="file" path="*.log" />
+        <exclude domain="external" path="logs/" />
+        
+        <!-- ❌ Cache (regenerable) -->
+        <exclude domain="external" path="cache/" />
+        <exclude domain="file" path="cache/" />
+        <exclude domain="file" path=".cache/" />
+        
+        <!-- ❌ Temp files -->
+        <exclude domain="file" path="tmp/" />
+        <exclude domain="file" path="temp/" />
+        <exclude domain="external" path="tmp/" />
+        
+        <!-- ❌ Downloaded media -->
+        <exclude domain="external" path="media/" />
+        <exclude domain="external" path="uploads/" />
+        
+        <!-- ❌ User-generated content -->
+        <exclude domain="file" path="exports/" />
+        <exclude domain="file" path="backups/" />
+        
+        <!-- ❌ SQLite temp files -->
+        <exclude domain="database" path="*.db-journal" />
+        <exclude domain="database" path="*.db-shm" />
+        <exclude domain="database" path="*.db-wal" />
+        
+        <!-- ❌ Shared libraries -->
+        <exclude domain="native" path="lib/" />
+
+    </cloud-backup>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 2: DEVICE-TO-DEVICE TRANSFER
+         ═══════════════════════════════════════════════════════════
+         When user transfers to new device (Android 12+)
+         ═══════════════════════════════════════════════════════════ -->
+    <device-transfer>
+
+        <!-- ═══════════════════════════════════════════════════════
+             PART 2.A: INCLUDE (TRANSFERABLE DATA)
+             ═══════════════════════════════════════════════════════ -->
+        
+        <!-- ✅ User Preferences (carry over to new device) -->
+        <include domain="sharedpref" path="user_prefs.xml" />
+        <include domain="sharedpref" path="settings_prefs.xml" />
+        <include domain="sharedpref" path="theme_prefs.xml" />
+        <include domain="sharedpref" path="language_prefs.xml" />
+        
+        <!-- ✅ Onboarding (don't show again) -->
+        <include domain="sharedpref" path="onboarding_prefs.xml" />
+
+        <!-- ═══════════════════════════════════════════════════════
+             PART 2.B: EXCLUDE (DEVICE-SPECIFIC DATA)
+             ═══════════════════════════════════════════════════════ -->
+        
+        <!-- ❌ Device-specific tokens (must regenerate on new device) -->
+        <exclude domain="sharedpref" path="fcm_token.xml" />
+        <exclude domain="sharedpref" path="auth_prefs.xml" />
+        <exclude domain="sharedpref" path="pin_prefs.xml" />
+        <exclude domain="sharedpref" path="encryption.xml" />
+        <exclude domain="sharedpref" path="session_prefs.xml" />
+        <exclude domain="sharedpref" path="device_id.xml" />
+        <exclude domain="sharedpref" path="device_info.xml" />
+        
+        <!-- ❌ Firebase configs -->
+        <exclude domain="file" path="firebase-key.json" />
+        <exclude domain="file" path="google-services.json" />
+        
+        <!-- ❌ Databases (device-specific data) -->
+        <exclude domain="database" path="secure_data.db" />
+        <exclude domain="database" path="devices.db" />
+        <exclude domain="database" path="locations.db" />
+        <exclude domain="database" path="tracker.db" />
+        <exclude domain="database" path="tracker.db-shm" />
+        <exclude domain="database" path="tracker.db-wal" />
+        
+        <!-- ❌ Python (will reinstall) -->
+        <exclude domain="file" path="python/" />
+        <exclude domain="file" path="__pycache__/" />
+        <exclude domain="file" path="*.pyc" />
+        
+        <!-- ❌ Certificates -->
+        <exclude domain="file" path="*.pem" />
+        <exclude domain="file" path="*.key" />
+        <exclude domain="file" path="*.crt" />
+        <exclude domain="file" path="*.p12" />
+        
+        <!-- ❌ Logs -->
+        <exclude domain="file" path="logs/" />
+        <exclude domain="file" path="*.log" />
+        <exclude domain="external" path="logs/" />
+        
+        <!-- ❌ Cache -->
+        <exclude domain="external" path="cache/" />
+        <exclude domain="file" path="cache/" />
+        
+        <!-- ❌ Temp -->
+        <exclude domain="file" path="tmp/" />
+        <exclude domain="external" path="tmp/" />
+        
+        <!-- ❌ Media -->
+        <exclude domain="external" path="media/" />
+        <exclude domain="external" path="uploads/" />
+        
+        <!-- ❌ Exports -->
+        <exclude domain="file" path="exports/" />
+        <exclude domain="file" path="backups/" />
+        
+        <!-- ❌ SQLite temp -->
+        <exclude domain="database" path="*.db-journal" />
+        <exclude domain="database" path="*.db-shm" />
+        <exclude domain="database" path="*.db-wal" />
+        
+        <!-- ❌ Native libs -->
+        <exclude domain="native" path="lib/" />
+
+    </device-transfer>
+
+</data-extraction-rules>
