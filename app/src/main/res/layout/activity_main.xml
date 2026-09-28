@@ -31,54 +31,31 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:padding="24dp">
+            android:padding="20dp">
 
-            <!-- Logo -->
             <ImageView
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
                 android:src="@mipmap/ic_launcher"
                 android:contentDescription="@string/app_name" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="8dp"
                 android:text="@string/app_name"
                 android:textColor="@color/text_primary"
-                android:textSize="24sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/app_version"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
-
-            <!-- Spacer -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="32dp" />
-
-            <!-- Progress (visible while starting) -->
-            <com.google.android.material.progressindicator.CircularProgressIndicator
-                android:id="@+id/progressBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:indeterminate="true"
-                android:visibility="gone"
-                app:indicatorColor="@color/primary" />
-
-            <!-- Status card -->
+            <!-- ══════════ SERVER CARD ══════════ -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="20dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
-                app:contentPadding="16dp">
+                app:contentPadding="14dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -86,63 +63,134 @@
                     android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/tvStatus"
+                        android:id="@+id/tvServerStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="🔴 Server: STOPPED"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="17sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/tvPort"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="Port: 5000"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvResult"
+                        android:id="@+id/tvServerPort"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Last result: —"
+                        android:text="Port: 5000 • /api/v1"
                         android:textColor="@color/text_secondary"
-                        android:textSize="14sp" />
+                        android:textSize="13sp" />
 
                     <TextView
-                        android:id="@+id/tvError"
+                        android:id="@+id/tvServerResult"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Last: —"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvServerError"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text=""
+                        android:textColor="@color/status_error"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/progressServer"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text=""
-                        android:textColor="@color/status_error"
-                        android:textSize="13sp"
-                        android:visibility="gone" />
+                        android:indeterminate="true"
+                        android:visibility="gone"
+                        app:indicatorColor="@color/primary" />
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Toggle button -->
             <Button
-                android:id="@+id/btnToggle"
+                android:id="@+id/btnServerToggle"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="24dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
                 android:text="▶ Start Server"
-                android:textSize="16sp" />
+                android:textSize="15sp" />
 
-            <!-- Info footer -->
+            <!-- ══════════ TUNNEL CARD ══════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:contentPadding="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvTunnelStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔴 Tunnel: STOPPED"
+                        android:textColor="@color/text_primary"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvTunnelUrl"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text=""
+                        android:textColor="@color/primary"
+                        android:textSize="13sp"
+                        android:visibility="gone"
+                        android:autoLink="web" />
+
+                    <TextView
+                        android:id="@+id/tvTunnelError"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text=""
+                        android:textColor="@color/status_error"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/progressTunnel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:indeterminate="true"
+                        android:visibility="gone"
+                        app:indicatorColor="@color/secondary" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <Button
+                android:id="@+id/btnTunnelToggle"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
+                android:text="🌐 Start Tunnel" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:text="المرحلة 4.5 — اختبار تشغيل Python داخل التطبيق"
+                android:layout_marginTop="20dp"
+                android:text="Phase 4.7 — Cloudflare Tunnel داخل APK"
                 android:textColor="@color/text_tertiary"
-                android:textSize="12sp"
+                android:textSize="11sp"
                 android:gravity="center" />
 
         </LinearLayout>
