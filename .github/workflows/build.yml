@@ -1,0 +1,57 @@
+name: Build Admin APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.4
+
+      - name: Create local.properties
+        run: echo "sdk.dir=${ANDROID_HOME}" > local.properties
+
+      - name: Place Firebase secrets
+        env:
+          ADMIN_JSON: ${{ secrets.GOOGLE_SERVICES_ADMIN }}
+          CLIENT_JSON: ${{ secrets.GOOGLE_SERVICES_CLIENT }}
+          FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
+        run: |
+          mkdir -p app/src/main/python
+          python3 -c "import os; open('app/google-services.json','w',encoding='utf-8').write(os.environ['ADMIN_JSON'])"
+          python3 -c "import os; open('app/src/main/python/firebase-key.json','w',encoding='utf-8').write(os.environ['FIREBASE_KEY'])"
+
+      - name: Build APK
+        run: gradle assembleDebug --stacktrace --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: family-admin-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
