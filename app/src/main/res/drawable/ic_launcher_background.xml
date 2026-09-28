@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ═══════════════════════════════════════════════════════════════
+     Family Admin v3.0 — Launcher Icon Background
+     Adaptive Icon Background Layer
+     ═══════════════════════════════════════════════════════════════
+     
+     Design:
+     ─────────────────────────────────────────────────────────────
+     • Linear Gradient (Diagonal 135°)
+     • Colors: Primary Blue → Secondary Teal
+     • Subtle pattern overlay for depth
+     • Viewport: 108 x 108 dp
+     
+     Color Palette:
+     ─────────────────────────────────────────────────────────────
+     • Start: #1976D2 (Primary Blue)
+     • Mid:   #1E88E5 (Blue 600)
+     • End:   #26A69A (Secondary Teal)
+     
+     ═══════════════════════════════════════════════════════════════
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LAYER 1: GRADIENT BACKGROUND
+         Diagonal gradient from Blue to Teal
+         ═══════════════════════════════════════════════════════════ -->
+    <path
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="108"
+                android:endY="108">
+                <item
+                    android:offset="0.0"
+                    android:color="#1976D2" />
+                <item
+                    android:offset="0.5"
+                    android:color="#1E88E5" />
+                <item
+                    android:offset="1.0"
+                    android:color="#26A69A" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LAYER 2: RADIAL GLOW (Top-Left)
+         Adds depth with a soft light source
+         ═══════════════════════════════════════════════════════════ -->
+    <path
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="30"
+                android:centerY="30"
+                android:gradientRadius="80">
+                <item
+                    android:offset="0.0"
+                    android:color="#33FFFFFF" />
+                <item
+                    android:offset="1.0"
+                    android:color="#00FFFFFF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LAYER 3: DECORATIVE CIRCLES (Subtle Pattern)
+         Adds geometric depth — visible but not distracting
+         ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Top-right circle -->
+    <path
+        android:pathData="M108,0 m-25,0 a25,25 0 1,0 50,0 a25,25 0 1,0 -50,0"
+        android:fillColor="#1AFFFFFF" />
+
+    <!-- Bottom-left circle -->
+    <path
+        android:pathData="M0,108 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0"
+        android:fillColor="#15FFFFFF" />
+
+    <!-- Small accent circle -->
+    <path
+        android:pathData="M95,95 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0"
+        android:fillColor="#20FFFFFF" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LAYER 4: DIAGONAL STRIPES (Subtle texture)
+         Adds a modern touch — very subtle
+         ═══════════════════════════════════════════════════════════ -->
+    <path
+        android:pathData="M0,60 L108,30 L108,35 L0,65 Z"
+        android:fillColor="#0DFFFFFF" />
+
+    <path
+        android:pathData="M0,80 L108,50 L108,55 L0,85 Z"
+        android:fillColor="#0AFFFFFF" />
+
+</vector>
