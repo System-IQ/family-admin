@@ -1,23 +1,6 @@
 # ═══════════════════════════════════════════════════════════════
 #  ULTRA FAMILY TRACKER v5.0 — Flask HTTP Server
 # ═══════════════════════════════════════════════════════════════
-#  Contract with Kotlin:
-#    start_server(port: int = 5000) -> str
-#    stop_server()  -> str
-#    get_status()   -> dict
-#    get_version()  -> str
-#    ping()         -> str
-#
-#  Design:
-#    - Single Flask app, created per-process
-#    - Runs in a daemon thread so Chaquopy can keep the process alive
-#    - All endpoints under /api/v1 except /, /health, /metrics
-#    - Auth: X-Admin-Key OR X-Device-Key (both optional if keys empty)
-#    - Rate limit: in-memory sliding window per key
-#    - All DB access via database.py
-#    - All validation via validators.py
-#    - All migrations applied on start
-# ═══════════════════════════════════════════════════════════════
 
 import os
 import sys
@@ -30,23 +13,18 @@ from datetime import datetime
 from functools import wraps
 from typing import Optional, Dict, Any, List, Tuple
 
-# ═══ Flask ═══
 try:
     from flask import Flask, request, jsonify, Response, g
     FLASK_AVAILABLE = True
 except ImportError:
     FLASK_AVAILABLE = False
 
-# ═══ Local modules ═══
 import config as cfg
 import database as db
 import validators as vd
 import migrations as mig
+import websocket_server as ws
 
-
-# ═══════════════════════════════════════════════════════════════
-#  Global state
-# ═══════════════════════════════════════════════════════════════
 
 _app: Optional["Flask"] = None
 _thread: Optional[threading.Thread] = None
@@ -64,14 +42,9 @@ _metrics: Dict[str, Any] = {
 }
 _metrics_lock = threading.Lock()
 
-# Rate limit: {key: [timestamps]}
 _rate_store: Dict[str, List[float]] = {}
 _rate_lock = threading.Lock()
 
-
-# ═══════════════════════════════════════════════════════════════
-#  Logging
-# ═══════════════════════════════════════════════════════════════
 
 def _log(level: str, msg: str) -> None:
     ts = datetime.now().strftime("%H:%M:%S")
@@ -89,10 +62,6 @@ def log_warn(msg: str) -> None:
 def log_error(msg: str) -> None:
     _log("ERROR", msg)
 
-
-# ═══════════════════════════════════════════════════════════════
-#  Utilities
-# ═══════════════════════════════════════════════════════════════
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
@@ -117,12 +86,7 @@ def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-# ═══════════════════════════════════════════════════════════════
-#  Auth
-# ═══════════════════════════════════════════════════════════════
-
 def _auth_admin() -> bool:
-    """Check X-Admin-Key header. Empty key = open access."""
     if not cfg.ADMIN_KEY:
         return True
     key = request.headers.get("X-Admin-Key") or request.args.get("admin_key")
@@ -130,18 +94,13 @@ def _auth_admin() -> bool:
 
 
 def _auth_device(device_id: str) -> bool:
-    """
-    Check X-Device-Key header against the device's stored key.
-    If device has no key stored, accept the default key.
-    If default is empty, accept any.
-    """
     presented = request.headers.get("X-Device-Key")
     device = db.get_device(device_id)
     if device and device.get("device_key"):
         return presented == device["device_key"]
     if cfg.DEVICE_DEFAULT_KEY:
         return presented == cfg.DEVICE_DEFAULT_KEY
-    return True  # no key configured → open
+    return True
 
 
 def require_admin(f):
@@ -157,7 +116,6 @@ def require_admin(f):
 def require_device(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        # device_id can come from URL or JSON
         device_id = kwargs.get("device_id")
         if not device_id:
             data = request.get_json(silent=True) or {}
@@ -170,10 +128,6 @@ def require_device(f):
         return f(*args, **kwargs)
     return wrapper
 
-
-# ═══════════════════════════════════════════════════════════════
-#  Rate limit
-# ═══════════════════════════════════════════════════════════════
 
 def _rate_limit_key() -> str:
     admin = request.headers.get("X-Admin-Key") or ""
@@ -212,10 +166,6 @@ def rate_limit(f):
     return wrapper
 
 
-# ═══════════════════════════════════════════════════════════════
-#  Error helpers
-# ═══════════════════════════════════════════════════════════════
-
 def _json_error(msg: str, code: int = 400) -> Tuple[Response, int]:
     _inc_metric("errors_total")
     return jsonify({"error": msg}), code
@@ -228,18 +178,34 @@ def _require_json() -> Optional[Dict[str, Any]]:
     return data
 
 
-# ═══════════════════════════════════════════════════════════════
-#  Flask app factory
-# ═══════════════════════════════════════════════════════════════
+def _publish_location_safe(device_id: str, row_id: int, data: Dict[str, Any]) -> None:
+    try:
+        ws.publish_location(device_id, {
+            "id": row_id,
+            "lat": data["lat"],
+            "lon": data["lon"],
+            "accuracy": data.get("accuracy"),
+            "speed": data.get("speed"),
+            "battery": data.get("battery"),
+            "source": data.get("source"),
+            "timestamp": data.get("timestamp") or _now_ms(),
+        })
+    except Exception as e:
+        log_warn(f"websocket publish (location) failed: {e}")
+
+
+def _publish_command_safe(device_id: str, command_id: str,
+                          status: str, result: Optional[str] = None) -> None:
+    try:
+        ws.publish_command_update(device_id, command_id, status, result)
+    except Exception as e:
+        log_warn(f"websocket publish (command) failed: {e}")
+
 
 def _create_app() -> "Flask":
     app = Flask(__name__)
     app.config["JSON_AS_ASCII"] = False
     app.config["MAX_CONTENT_LENGTH"] = cfg.SERVER_MAX_CONTENT_MB * 1024 * 1024
-
-    # ─────────────────────────────────────────────────────────
-    #  Root / Health / Metrics
-    # ─────────────────────────────────────────────────────────
 
     @app.route("/")
     def index():
@@ -277,10 +243,6 @@ def _create_app() -> "Flask":
             "db_size_mb": db.get_db_size_mb(),
         })
 
-    # ─────────────────────────────────────────────────────────
-    #  Devices
-    # ─────────────────────────────────────────────────────────
-
     @app.route(f"{cfg.API_PREFIX}/devices/register", methods=["POST"])
     @rate_limit
     def register():
@@ -288,18 +250,16 @@ def _create_app() -> "Flask":
         data = _require_json()
         if data is None:
             return _json_error("invalid_json")
-
         ok, err = vd.validate_register_payload(data)
         if not ok:
             return _json_error(err)
-
         db.register_device(
             device_id=data["device_id"],
             name=data.get("name"),
             model=data.get("model"),
             android_version=data.get("android_version"),
         )
-        log_info(f"📱 Registered: {data['device_id']}")
+        log_info(f"Registered: {data['device_id']}")
         return jsonify({
             "status": "registered",
             "device_id": data["device_id"],
@@ -327,12 +287,8 @@ def _create_app() -> "Flask":
     def delete_device(device_id):
         _inc_metric("requests_total", "delete_device")
         db.delete_device(device_id)
-        log_info(f"🗑️ Deleted: {device_id}")
+        log_info(f"Deleted: {device_id}")
         return jsonify({"status": "deleted"})
-
-    # ─────────────────────────────────────────────────────────
-    #  Locations
-    # ─────────────────────────────────────────────────────────
 
     @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/locations", methods=["POST"])
     @require_device
@@ -343,17 +299,15 @@ def _create_app() -> "Flask":
         if data is None:
             return _json_error("invalid_json")
         data["device_id"] = device_id
-
         ok, err = vd.validate_location_payload(data)
         if not ok:
             return _json_error(err)
-
         row_id = db.save_location(device_id, data)
         _inc_metric("locations_saved")
-
+        _publish_location_safe(device_id, row_id, data)
         spd = (data.get("speed") or 0) * 3.6
         log_info(
-            f"📍 {device_id}: {data['lat']:.5f},{data['lon']:.5f} | "
+            f"{device_id}: {data['lat']:.5f},{data['lon']:.5f} | "
             f"{spd:.1f}km/h | bat:{data.get('battery', '?')}% | id={row_id}"
         )
         return jsonify({"status": "saved", "id": row_id, "server_time": _now_ms()})
@@ -367,22 +321,20 @@ def _create_app() -> "Flask":
         if data is None:
             return _json_error("invalid_json")
         data["device_id"] = device_id
-
         ok, err = vd.validate_location_batch_payload(data)
         if not ok:
             return _json_error(err)
-
         saved = 0
         for loc in data["locations"]:
             loc.setdefault("timestamp", _now_ms())
             try:
-                db.save_location(device_id, loc)
+                row_id = db.save_location(device_id, loc)
                 saved += 1
+                _publish_location_safe(device_id, row_id, loc)
             except Exception as e:
                 log_warn(f"Batch item error: {e}")
-
         _inc_metric("locations_saved")
-        log_info(f"📦 Batch: {device_id} {saved}/{len(data['locations'])}")
+        log_info(f"Batch: {device_id} {saved}/{len(data['locations'])}")
         return jsonify({
             "status": "saved",
             "count": saved,
@@ -408,17 +360,14 @@ def _create_app() -> "Flask":
         ok, limit, err = vd.parse_int_arg(request.args, "limit", 5000, 1, 50000)
         if not ok:
             return _json_error(err)
-
         since = _now_ms() - hours * 3600 * 1000
         rows = db.get_locations(device_id, since=since, limit=limit)
-
         total_m = 0.0
         for i in range(1, len(rows)):
             total_m += _haversine(
                 rows[i - 1]["lat"], rows[i - 1]["lon"],
                 rows[i]["lat"], rows[i]["lon"],
             )
-
         return jsonify({
             "device_id": device_id,
             "hours": hours,
@@ -428,10 +377,6 @@ def _create_app() -> "Flask":
             "locations": rows,
         })
 
-    # ─────────────────────────────────────────────────────────
-    #  Commands
-    # ─────────────────────────────────────────────────────────
-
     @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/commands", methods=["POST"])
     @require_admin
     def post_command(device_id):
@@ -439,11 +384,9 @@ def _create_app() -> "Flask":
         data = _require_json()
         if data is None:
             return _json_error("invalid_json")
-
         ok, err = vd.validate_command_payload(data)
         if not ok:
             return _json_error(err)
-
         cmd_id = db.add_command(
             device_id=device_id,
             command=data["command"],
@@ -451,7 +394,8 @@ def _create_app() -> "Flask":
             ttl_ms=data.get("ttl_ms"),
         )
         _inc_metric("commands_queued")
-        log_info(f"➕ Command queued: {device_id} → {data['command']} ({cmd_id[:8]})")
+        _publish_command_safe(device_id, cmd_id, "queued")
+        log_info(f"Command queued: {device_id} -> {data['command']} ({cmd_id[:8]})")
         return jsonify({"status": "queued", "command_id": cmd_id})
 
     @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/commands/pending", methods=["GET"])
@@ -460,11 +404,10 @@ def _create_app() -> "Flask":
         _inc_metric("requests_total", "pending_commands")
         cmds = db.get_pending_commands(device_id)
         if cmds:
-            log_info(f"⚡ Sent {len(cmds)} command(s) → {device_id}")
+            log_info(f"Sent {len(cmds)} command(s) -> {device_id}")
         return jsonify({"commands": cmds, "count": len(cmds)})
 
-    @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/commands/<command_id>/ack",
-               methods=["POST"])
+    @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/commands/<command_id>/ack", methods=["POST"])
     @require_device
     def ack_command(device_id, command_id):
         _inc_metric("requests_total", "ack_command")
@@ -472,14 +415,14 @@ def _create_app() -> "Flask":
         status = data.get("status", "success")
         if status not in ("success", "failed"):
             return _json_error("status must be 'success' or 'failed'")
-
         db.mark_command_result(
             command_id=command_id,
             status=status,
             result=data.get("result"),
             error=data.get("error"),
         )
-        log_info(f"✅ Command ack: {device_id} / {command_id[:8]} → {status}")
+        _publish_command_safe(device_id, command_id, status, data.get("result"))
+        log_info(f"Command ack: {device_id} / {command_id[:8]} -> {status}")
         return jsonify({"status": "acked"})
 
     @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/commands/history", methods=["GET"])
@@ -491,10 +434,6 @@ def _create_app() -> "Flask":
             return _json_error(err)
         return jsonify({"history": db.get_command_history(device_id, limit=limit)})
 
-    # ─────────────────────────────────────────────────────────
-    #  Geofences
-    # ─────────────────────────────────────────────────────────
-
     @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/geofences", methods=["POST"])
     @require_admin
     def add_geofence(device_id):
@@ -502,11 +441,9 @@ def _create_app() -> "Flask":
         data = _require_json()
         if data is None:
             return _json_error("invalid_json")
-
         ok, err = vd.validate_geofence_payload(data)
         if not ok:
             return _json_error(err)
-
         gid = db.add_geofence(
             device_id=device_id,
             name=data["name"],
@@ -514,7 +451,7 @@ def _create_app() -> "Flask":
             lon=data["lon"],
             radius=data.get("radius", 200),
         )
-        log_info(f"🔔 Geofence added: {device_id} / {data['name']}")
+        log_info(f"Geofence added: {device_id} / {data['name']}")
         return jsonify({"status": "added", "id": gid})
 
     @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/geofences", methods=["GET"])
@@ -523,18 +460,13 @@ def _create_app() -> "Flask":
         _inc_metric("requests_total", "list_geofences")
         return jsonify({"geofences": db.get_geofences(device_id)})
 
-    @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/geofences/<int:gid>",
-               methods=["DELETE"])
+    @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/geofences/<int:gid>", methods=["DELETE"])
     @require_admin
     def delete_geofence(device_id, gid):
         _inc_metric("requests_total", "delete_geofence")
         db.delete_geofence(gid)
-        log_info(f"🗑️ Geofence deleted: {gid}")
+        log_info(f"Geofence deleted: {gid}")
         return jsonify({"status": "deleted"})
-
-    # ─────────────────────────────────────────────────────────
-    #  Alerts
-    # ─────────────────────────────────────────────────────────
 
     @app.route(f"{cfg.API_PREFIX}/devices/<device_id>/alerts", methods=["GET"])
     @require_admin
@@ -544,10 +476,6 @@ def _create_app() -> "Flask":
         if not ok:
             return _json_error(err)
         return jsonify({"alerts": db.get_alerts(device_id, limit=limit)})
-
-    # ─────────────────────────────────────────────────────────
-    #  Server stats
-    # ─────────────────────────────────────────────────────────
 
     @app.route(f"{cfg.API_PREFIX}/server/stats", methods=["GET"])
     @require_admin
@@ -561,10 +489,6 @@ def _create_app() -> "Flask":
             "db": db.get_stats_summary(),
             "metrics": snapshot,
         })
-
-    # ─────────────────────────────────────────────────────────
-    #  Error handlers
-    # ─────────────────────────────────────────────────────────
 
     @app.errorhandler(404)
     def _404(e):
@@ -586,49 +510,32 @@ def _create_app() -> "Flask":
     return app
 
 
-# ═══════════════════════════════════════════════════════════════
-#  Public API (called from Kotlin)
-# ═══════════════════════════════════════════════════════════════
-
 def start_server(port: int = 0, debug: bool = False) -> str:
-    """
-    Start Flask server in a background daemon thread.
-    Returns: "started" | "already_running" | "flask_not_available" | "error: ..."
-    """
     global _app, _thread, _running
-
     with _lock:
         if _running:
             log_warn("Server already running")
             return "already_running"
-
         if not FLASK_AVAILABLE:
             log_error("Flask is not available")
             return "flask_not_available"
-
         try:
-            # 1. Init DB & run migrations
             db.init_db()
-            log_info("✅ database initialized")
-
+            log_info("database initialized")
             conn = db._get_conn()
             report = mig.ensure_schema(conn)
             if report.get("failed"):
                 log_error(f"Migration failed: {report.get('error')}")
                 return f"error: migration_failed: {report.get('error')}"
-            log_info(f"✅ schema at v{report.get('to_version')}")
-
-            # 2. Build Flask app
+            log_info(f"schema at v{report.get('to_version')}")
             _app = _create_app()
-
-            # 3. Launch thread
             actual_port = port or cfg.SERVER_PORT
 
             def _run():
                 global _running
                 try:
                     _running = True
-                    log_info(f"🚀 Server listening on 0.0.0.0:{actual_port}")
+                    log_info(f"Server listening on 0.0.0.0:{actual_port}")
                     _app.run(
                         host="0.0.0.0",
                         port=actual_port,
@@ -644,15 +551,12 @@ def start_server(port: int = 0, debug: bool = False) -> str:
 
             _thread = threading.Thread(target=_run, daemon=True)
             _thread.start()
-
-            # 4. Wait for binding
             time.sleep(2.0)
             if _running:
-                log_info("✅ Server ready")
+                log_info("Server ready")
                 return "started"
             log_error("Server failed to start")
             return "failed"
-
         except Exception as e:
             log_error(f"start_server failed: {e}")
             log_error(traceback.format_exc())
@@ -660,7 +564,6 @@ def start_server(port: int = 0, debug: bool = False) -> str:
 
 
 def stop_server() -> str:
-    """Signal shutdown. Flask itself will stop when the process ends."""
     global _running
     _running = False
     log_info("Server stop requested")
@@ -688,26 +591,14 @@ def ping() -> str:
     return "pong"
 
 
-# ═══════════════════════════════════════════════════════════════
-#  Standalone mode (for testing in Termux)
-# ═══════════════════════════════════════════════════════════════
-
 if __name__ == "__main__":
-    log_info("═" * 60)
-    log_info("  ULTRA FAMILY TRACKER v5.0 — Standalone Mode")
-    log_info("═" * 60)
-    log_info(f"Python: {sys.version.split()[0]}")
-    log_info(f"Flask:  {'✅' if FLASK_AVAILABLE else '❌'}")
-    log_info(f"DB:     {cfg.DB_PATH}")
-    log_info("═" * 60)
-
+    log_info("Standalone Mode")
     result = start_server()
-    log_info(f"start_server → {result}")
-
+    log_info(f"start_server -> {result}")
     try:
         while True:
             time.sleep(60)
-            log_info(f"💓 {get_status()}")
+            log_info(f"heartbeat {get_status()}")
     except KeyboardInterrupt:
         log_info("Shutting down...")
         stop_server()
