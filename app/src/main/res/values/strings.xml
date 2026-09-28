@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ═══════════════════════════════════════════════════════════════
+     Family Admin v3.0 — Strings (Default: English)
+     Complete string resources with all keys
+     ═══════════════════════════════════════════════════════════════
+-->
+<resources>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 1: APP INFORMATION
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="app_name">Family Admin</string>
+    <string name="app_version">3.0.0</string>
+    <string name="app_tagline">Complete Family Control Center</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 2: NOTIFICATION CHANNELS
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="default_notification_channel_id">family_default</string>
+
+    <!-- Server Channel -->
+    <string name="channel_server_name">Server Status</string>
+    <string name="channel_server_desc">Persistent notification showing server state</string>
+
+    <!-- Alerts Channel -->
+    <string name="channel_alerts_name">Family Alerts</string>
+    <string name="channel_alerts_desc">Important alerts about devices and safety</string>
+
+    <!-- Devices Channel -->
+    <string name="channel_devices_name">Device Updates</string>
+    <string name="channel_devices_desc">Location and status updates from devices</string>
+
+    <!-- Emergency Channel -->
+    <string name="channel_emergency_name">Emergency</string>
+    <string name="channel_emergency_desc">Emergency alerts requiring immediate attention</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 3: SERVER STATUS
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="server_status">Server Status</string>
+    <string name="server_running">Running</string>
+    <string name="server_stopped">Stopped</string>
+    <string name="server_starting">Starting...</string>
+    <string name="server_stopping">Stopping...</string>
+    <string name="server_error">Server Error</string>
+    <string name="server_port">Port</string>
+    <string name="server_uptime">Uptime</string>
+    <string name="server_public_url">Public URL</string>
+    <string name="server_local_url">Local URL</string>
+    <string name="server_copy_url">Copy URL</string>
+    <string name="server_url_copied">URL copied to clipboard</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 4: DASHBOARD
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="dashboard_title">Dashboard</string>
+    <string name="dashboard_overview">Overview</string>
+    <string name="dashboard_devices">Devices</string>
+    <string name="dashboard_online">Online</string>
+    <string name="dashboard_offline">Offline</string>
+    <string name="dashboard_total">Total</string>
+    <string name="dashboard_active">Active</string>
+    <string name="dashboard_idle">Idle</string>
+    <string name="dashboard_recent">Recent Activity</string>
+    <string name="dashboard_quick_actions">Quick Actions</string>
+    <string name="dashboard_last_update">Last update</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 5: DEVICES
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="devices_title">Devices</string>
+    <string name="devices_all">All Devices</string>
+    <string name="devices_empty">No devices registered yet</string>
+    <string name="devices_empty_hint">Devices will appear here once they connect</string>
+    <string name="devices_search">Search devices...</string>
+    <string name="devices_sort">Sort by</string>
+    <string name="devices_sort_name">Name</string>
+    <string name="devices_sort_recent">Most Recent</string>
+    <string name="devices_sort_battery">Battery</string>
+    <string name="devices_filter_all">All</string>
+    <string name="devices_filter_online">Online</string>
+    <string name="devices_filter_offline">Offline</string>
+
+    <!-- Device Status -->
+    <string name="device_online">Online</string>
+    <string name="device_offline">Offline</string>
+    <string name="device_idle">Idle</string>
+    <string name="device_last_seen">Last seen</string>
+    <string name="device_battery">Battery</string>
+    <string name="device_charging">Charging</string>
+    <string name="device_not_charging">Not charging</string>
+    <string name="device_speed">Speed</string>
+    <string name="device_accuracy">Accuracy</string>
+    <string name="device_location">Location</string>
+    <string name="device_network">Network</string>
+    <string name="device_model">Model</string>
+    <string name="device_android_version">Android Version</string>
+    <string name="device_id_label">Device ID</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 6: LOCATION
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="location_title">Location</string>
+    <string name="location_current">Current Location</string>
+    <string name="location_history">Location History</string>
+    <string name="location_address">Address</string>
+    <string name="location_coordinates">Coordinates</string>
+    <string name="location_open_maps">Open in Maps</string>
+    <string name="location_copy">Copy Coordinates</string>
+    <string name="location_copied">Coordinates copied</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 7: MAPS & ROUTES
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="map_title">Map</string>
+    <string name="map_my_devices">My Devices</string>
+    <string name="map_show_all">Show All</string>
+    <string name="map_clear">Clear</string>
+    <string name="map_center_all">Center on All</string>
+    <string name="map_satellite">Satellite</string>
+    <string name="map_normal">Normal</string>
+    <string name="map_terrain">Terrain</string>
+
+    <!-- ═══ Routes ═══ -->
+    <string name="route_title">Route</string>
+    <string name="route_today">Today</string>
+    <string name="route_yesterday">Yesterday</string>
+    <string name="route_last_24h">Last 24 hours</string>
+    <string name="route_last_7d">Last 7 days</string>
+    <string name="route_custom">Custom Range</string>
+    <string name="route_distance">Distance</string>
+    <string name="route_duration">Duration</string>
+    <string name="route_points">Points</string>
+    <string name="route_max_speed">Max Speed</string>
+    <string name="route_avg_speed">Avg Speed</string>
+    <string name="route_moving_time">Moving Time</string>
+    <string name="route_stopped_time">Stopped Time</string>
+    <string name="route_export_gpx">Export GPX</string>
+    <string name="route_export_json">Export JSON</string>
+
+    <!-- ═══ Stops ═══ -->
+    <string name="stops_title">Stops</string>
+    <string name="stops_empty">No stops in this period</string>
+    <string name="stops_duration">Duration</string>
+    <string name="stops_from">From</string>
+    <string name="stops_to">To</string>
+    <string name="stops_at">at</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 8: STATISTICS
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="stats_title">Statistics</string>
+    <string name="stats_daily">Daily</string>
+    <string name="stats_weekly">Weekly</string>
+    <string name="stats_monthly">Monthly</string>
+    <string name="stats_total_distance">Total Distance</string>
+    <string name="stats_total_trips">Total Trips</string>
+    <string name="stats_total_stops">Total Stops</string>
+    <string name="stats_active_time">Active Time</string>
+    <string name="stats_avg_speed">Average Speed</string>
+    <string name="stats_max_speed">Max Speed</string>
+    <string name="stats_most_visited">Most Visited Places</string>
+    <string name="stats_visits">visits</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 9: PINS (VERIFICATION CODES)
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="pins_title">Security Codes</string>
+    <string name="pins_description">Dynamic 32-character codes for device uninstall protection. Each code rotates every 24 hours.</string>
+    <string name="pins_current">Current Code</string>
+    <string name="pins_expires">Expires in</string>
+    <string name="pins_expired">Expired</string>
+    <string name="pins_copy">Copy Code</string>
+    <string name="pins_copied">Code copied</string>
+    <string name="pins_send_to_device">Send to Device</string>
+    <string name="pins_send_via">Send via</string>
+    <string name="pins_send_sms">SMS</string>
+    <string name="pins_send_whatsapp">WhatsApp</string>
+    <string name="pins_send_telegram">Telegram</string>
+    <string name="pins_history">History</string>
+    <string name="pins_no_code">No code available</string>
+    <string name="pins_generate_new">Generate New Code</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 10: COMMANDS
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="commands_title">Commands</string>
+    <string name="commands_quick">Quick Commands</string>
+    <string name="commands_advanced">Advanced Commands</string>
+    <string name="commands_history">Command History</string>
+
+    <!-- Command Names -->
+    <string name="cmd_enable_gps">Enable GPS</string>
+    <string name="cmd_disable_gps">Disable GPS</string>
+    <string name="cmd_send_now">Send Location Now</string>
+    <string name="cmd_lock_screen">Lock Screen</string>
+    <string name="cmd_sound_alert">Sound Alert</string>
+    <string name="cmd_send_message">Send Message</string>
+    <string name="cmd_screenshot">Take Screenshot</string>
+    <string name="cmd_restart_app">Restart App</string>
+    <string name="cmd_disconnect">Disconnect</string>
+    <string name="cmd_connect">Connect</string>
+    <string name="cmd_emergency">Emergency Mode</string>
+    <string name="cmd_wipe">Wipe Device</string>
+
+    <!-- Command Status -->
+    <string name="cmd_status_pending">Pending</string>
+    <string name="cmd_status_sent">Sent</string>
+    <string name="cmd_status_executed">Executed</string>
+    <string name="cmd_status_failed">Failed</string>
+    <string name="cmd_confirm">Confirm Command</string>
+    <string name="cmd_confirm_message">Are you sure you want to send this command?</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 11: ALERTS & NOTIFICATIONS
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="alerts_title">Alerts</string>
+    <string name="alerts_empty">No alerts</string>
+    <string name="alerts_all">All Alerts</string>
+    <string name="alerts_unread">Unread</string>
+    <string name="alerts_mark_read">Mark as Read</string>
+    <string name="alerts_clear_all">Clear All</string>
+
+    <!-- Alert Types -->
+    <string name="alert_low_battery">Low Battery</string>
+    <string name="alert_gps_off">GPS Turned Off</string>
+    <string name="alert_gps_on">GPS Turned On</string>
+    <string name="alert_device_offline">Device Offline</string>
+    <string name="alert_device_online">Device Online</string>
+    <string name="alert_high_speed">High Speed</string>
+    <string name="alert_geofence_enter">Entered Zone</string>
+    <string name="alert_geofence_exit">Left Zone</string>
+    <string name="alert_sos">SOS</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 12: SETTINGS
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="settings_title">Settings</string>
+
+    <!-- Sections -->
+    <string name="settings_general">General</string>
+    <string name="settings_server">Server</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_about">About</string>
+
+    <!-- General Settings -->
+    <string name="settings_language">Language</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_system">System Default</string>
+    <string name="settings_auto_refresh">Auto Refresh</string>
+    <string name="settings_refresh_interval">Refresh Interval</string>
+
+    <!-- Server Settings -->
+    <string name="settings_server_auto_start">Auto Start</string>
+    <string name="settings_server_auto_start_desc">Start server when app launches</string>
+    <string name="settings_server_boot">Start on Boot</string>
+    <string name="settings_server_boot_desc">Start server after device reboot</string>
+    <string name="settings_server_port">Server Port</string>
+    <string name="settings_server_tunnel">Cloudflare Tunnel</string>
+    <string name="settings_server_tunnel_enabled">Enable Tunnel</string>
+
+    <!-- Notification Settings -->
+    <string name="settings_notif_alerts">Family Alerts</string>
+    <string name="settings_notif_devices">Device Updates</string>
+    <string name="settings_notif_sound">Sound</string>
+    <string name="settings_notif_vibrate">Vibrate</string>
+    <string name="settings_notif_silent_hours">Silent Hours</string>
+
+    <!-- Security Settings -->
+    <string name="settings_app_lock">App Lock</string>
+    <string name="settings_app_lock_desc">Require PIN to open app</string>
+    <string name="settings_biometric">Biometric</string>
+    <string name="settings_biometric_desc">Use fingerprint or face</string>
+    <string name="settings_pin_rotation">PIN Rotation</string>
+    <string name="settings_pin_rotation_desc">Auto-rotate device unlock codes</string>
+
+    <!-- About -->
+    <string name="settings_version">Version</string>
+    <string name="settings_build">Build</string>
+    <string name="settings_privacy">Privacy Policy</string>
+    <string name="settings_terms">Terms of Service</string>
+    <string name="settings_licenses">Open Source Licenses</string>
+    <string name="settings_contact">Contact Support</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 13: ACTIONS & BUTTONS
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="action_refresh">Refresh</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="action_ok">OK</string>
+    <string name="action_yes">Yes</string>
+    <string name="action_no">No</string>
+    <string name="action_save">Save</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_close">Close</string>
+    <string name="action_back">Back</string>
+    <string name="action_next">Next</string>
+    <string name="action_done">Done</string>
+    <string name="action_skip">Skip</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_share">Share</string>
+    <string name="action_send">Send</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 14: STATES & MESSAGES
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="loading">Loading...</string>
+    <string name="loading_data">Loading data...</string>
+    <string name="loading_please_wait">Please wait</string>
+    <string name="processing">Processing...</string>
+    <string name="saving">Saving...</string>
+    <string name="sending">Sending...</string>
+    <string name="syncing">Syncing...</string>
+
+    <string name="success">Success</string>
+    <string name="success_saved">Saved successfully</string>
+    <string name="success_sent">Sent successfully</string>
+    <string name="success_copied">Copied to clipboard</string>
+
+    <string name="error_general">Something went wrong</string>
+    <string name="error_network">No network connection</string>
+    <string name="error_server">Server unavailable</string>
+    <string name="error_timeout">Request timed out</string>
+    <string name="error_not_found">Not found</string>
+    <string name="error_permission">Permission denied</string>
+    <string name="error_unknown">Unknown error</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 15: PERMISSIONS RATIONALES
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="perm_location_title">Location Permission</string>
+    <string name="perm_location_rationale">Location is required to display device positions on the map</string>
+
+    <string name="perm_notification_title">Notification Permission</string>
+    <string name="perm_notification_rationale">Notifications keep you informed about your family\'s safety</string>
+
+    <string name="perm_sms_title">SMS Permission</string>
+    <string name="perm_sms_rationale">SMS is used as fallback when internet is unavailable</string>
+
+    <string name="perm_battery_title">Battery Optimization</string>
+    <string name="perm_battery_rationale">Allow app to run in background for continuous monitoring</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 16: ONBOARDING
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="onboard_welcome">Welcome to Family Admin</string>
+    <string name="onboard_welcome_desc">Complete control over your family\'s safety</string>
+    <string name="onboard_step1_title">Add Devices</string>
+    <string name="onboard_step1_desc">Install Client app on your family devices</string>
+    <string name="onboard_step2_title">Set Up Server</string>
+    <string name="onboard_step2_desc">Server runs automatically in background</string>
+    <string name="onboard_step3_title">You\'re Ready</string>
+    <string name="onboard_step3_desc">Monitor your family from anywhere</string>
+    <string name="onboard_get_started">Get Started</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 17: ABOUT & LEGAL
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="about_title">About</string>
+    <string name="about_description">Family Admin is a complete solution for family safety monitoring</string>
+    <string name="about_copyright">© 2026 Family Tracker</string>
+    <string name="about_made_with">Made with ❤️ for families</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 18: UNITS & FORMATS
+         ═══════════════════════════════════════════════════════════ -->
+    <string name="unit_km">km</string>
+    <string name="unit_m">m</string>
+    <string name="unit_kmh">km/h</string>
+    <string name="unit_mph">mph</string>
+    <string name="unit_seconds">s</string>
+    <string name="unit_minutes">min</string>
+    <string name="unit_hours">h</string>
+    <string name="unit_days">d</string>
+    <string name="unit_ago">ago</string>
+    <string name="unit_now">now</string>
+    <string name="unit_just_now">just now</string>
+
+</resources>
