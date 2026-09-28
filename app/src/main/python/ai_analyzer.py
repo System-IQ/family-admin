@@ -1,6 +1,15 @@
 # ═══════════════════════════════════════════════════════════════
 #  ULTRA FAMILY TRACKER v5.0 — AI Analyzer
 # ═══════════════════════════════════════════════════════════════
+#  Purpose:
+#    Learn family movement patterns and detect anomalies.
+#  Principles:
+#    1. Honest cold-start: no fake predictions on empty data
+#    2. Confidence always accompanies predictions
+#    3. Explainable: every result has "reasons"
+#    4. Bounded memory: statistics computed on demand
+#    5. No external ML libraries (Chaquopy-friendly)
+# ═══════════════════════════════════════════════════════════════
 
 import math
 import time
@@ -71,9 +80,8 @@ def _hour_of_day(ts_ms: int) -> int:
 
 
 def _day_of_week(ts_ms: int) -> int:
-    # 0 = Monday ... 6 = Sunday (local time)
-    from datetime import datetime
-    return datetime.fromtimestamp(ts_ms / 1000).weekday()
+    days_since_epoch = ts_ms // (86400 * 1000)
+    return (days_since_epoch + 3) % 7
 
 
 def _load_recent_points(device_id: str, days: int = 14) -> List[Dict[str, Any]]:
@@ -356,4 +364,4 @@ def health_check() -> Dict[str, Any]:
             "unusual_max": ANOMALY_UNUSUAL_MAX,
             "suspicious_max": ANOMALY_SUSPICIOUS_MAX,
         },
-    }
+}
