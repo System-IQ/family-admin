@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ═══════════════════════════════════════════════════════════════
+     Family Admin v3.0 — Adaptive Launcher Icon
+     Android 8.0+ (API 26+)
+     ═══════════════════════════════════════════════════════════════
+     
+     Adaptive Icon Structure:
+     ─────────────────────────────────────────────────────────────
+     • Background Layer: Gradient + Pattern
+     • Foreground Layer: Shield + Location Pin
+     • Mask: Applied by launcher (circle, square, rounded, etc.)
+     
+     Design Specs:
+     ─────────────────────────────────────────────────────────────
+     • Viewport: 108 x 108 dp
+     • Safe Zone: 72 x 72 dp (center)
+     • Padding: 18 dp on all sides
+     • Fallback: @mipmap/ic_launcher (PNG)
+     
+     ═══════════════════════════════════════════════════════════════
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         BACKGROUND LAYER
+         Defines: Color + Gradient + Subtle pattern
+         ═══════════════════════════════════════════════════════════ -->
+    <background android:drawable="@drawable/ic_launcher_background" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         FOREGROUND LAYER
+         Defines: Shield + Location Pin (centered)
+         ═══════════════════════════════════════════════════════════ -->
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         MONOCHROME LAYER (Android 13+ Themed Icons)
+         Used when user enables "Themed Icons" in settings
+         ═══════════════════════════════════════════════════════════ -->
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+
+</adaptive-icon>
