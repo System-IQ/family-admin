@@ -7,11 +7,6 @@
 #  Contract:
 #    Every validator returns (ok: bool, error: Optional[str]).
 #    No exceptions. No side effects. Pure functions.
-#
-#  Usage:
-#    ok, err = validate_location_payload(data)
-#    if not ok:
-#        return jsonify({"error": err}), 400
 # ═══════════════════════════════════════════════════════════════
 
 from typing import Any, Dict, Optional, Tuple
@@ -55,7 +50,6 @@ def validate_device_id(v: Any) -> Tuple[bool, Optional[str]]:
         return False, "device_id must be a string"
     if len(v) < 1 or len(v) > 128:
         return False, "device_id length must be 1..128"
-    # Safe charset — alphanumerics, dash, underscore
     for ch in v:
         if not (ch.isalnum() or ch in "-_."):
             return False, "device_id contains invalid characters"
@@ -176,10 +170,14 @@ def validate_location_batch_payload(data: Dict[str, Any]) -> Tuple[bool, Optiona
     if len(locations) > 1000:
         return False, "locations array exceeds 1000 items per batch"
 
+    device_id = data["device_id"]
     for i, loc in enumerate(locations):
         if not isinstance(loc, dict):
             return False, f"locations[{i}] must be an object"
-        ok, err = validate_location_payload(loc)
+        # device_id lives at top level; inject it for per-item validation
+        merged = dict(loc)
+        merged["device_id"] = device_id
+        ok, err = validate_location_payload(merged)
         if not ok:
             return False, f"locations[{i}]: {err}"
 
@@ -190,7 +188,6 @@ def validate_location_batch_payload(data: Dict[str, Any]) -> Tuple[bool, Optiona
 #  Command validators
 # ───────────────────────────────────────────────────────────────
 
-# The full set of commands the Client understands.
 ALLOWED_COMMANDS = {
     "SEND_NOW",
     "ENABLE_GPS",
@@ -288,7 +285,6 @@ def parse_int_arg(
     if raw is None:
         return True, default, None
 
-    # Flask args are strings
     try:
         v = int(raw)
     except (TypeError, ValueError):
