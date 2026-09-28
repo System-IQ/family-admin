@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ═══════════════════════════════════════════════════════════════
+     Family Admin v3.0 — Network Security Configuration
+     Complete network security policy
+     ═══════════════════════════════════════════════════════════════
+     Purpose:
+       • Allow HTTP (Tailscale + Local Server)
+       • Enforce HTTPS where possible
+       • Trust system + user certificates (for dev)
+       • Pin certificates (optional, for production)
+     ═══════════════════════════════════════════════════════════════
+-->
+<network-security-config>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 1: DEFAULT CONFIGURATION
+         ═══════════════════════════════════════════════════════════
+         Applies to all connections unless overridden
+         ═══════════════════════════════════════════════════════════ -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <!-- ═══ System Certificates (for HTTPS) ═══ -->
+            <certificates src="system" />
+            
+            <!-- ═══ User Certificates (for debugging) ═══ -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 2: DOMAIN-SPECIFIC CONFIGURATIONS
+         ═══════════════════════════════════════════════════════════ -->
+
+    <!-- ═══ Tailscale Network (Private) ═══ -->
+    <!-- Tailscale IPs (100.x.x.x) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">100.126.249.107</domain>
+        <domain includeSubdomains="true">100.64.0.0</domain>
+        <domain includeSubdomains="true">*.ts.net</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- ═══ Local Network (LAN) ═══ -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">192.168.1.0</domain>
+        <domain includeSubdomains="true">192.168.8.1</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- ═══ Cloudflare Tunnel (HTTPS) ═══ -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">trycloudflare.com</domain>
+        <domain includeSubdomains="true">cloudflare.com</domain>
+        <domain includeSubdomains="true">cloudflareaccess.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- ═══ Firebase (HTTPS only) ═══ -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">firebaseio.com</domain>
+        <domain includeSubdomains="true">firebaseapp.com</domain>
+        <domain includeSubdomains="true">googleapis.com</domain>
+        <domain includeSubdomains="true">gstatic.com</domain>
+        <domain includeSubdomains="true">google.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- ═══ Google Maps (HTTPS) ═══ -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">maps.googleapis.com</domain>
+        <domain includeSubdomains="true">maps.gstatic.com</domain>
+        <domain includeSubdomains="true">mt0.googleapis.com</domain>
+        <domain includeSubdomains="true">mt1.googleapis.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- ═══ Telegram (HTTPS) ═══ -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">telegram.org</domain>
+        <domain includeSubdomains="true">t.me</domain>
+        <domain includeSubdomains="true">telegram.me</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 3: DEBUG OVERRIDES
+         ═══════════════════════════════════════════════════════════
+         Only applies to debug builds
+         ═══════════════════════════════════════════════════════════ -->
+    <debug-overrides>
+        <trust-anchors>
+            <!-- Trust user-added CAs in debug builds -->
+            <certificates src="user" />
+            <certificates src="system" />
+        </trust-anchors>
+    </debug-overrides>
+
+</network-security-config>
