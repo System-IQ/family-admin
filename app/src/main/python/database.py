@@ -1,35 +1,6 @@
 # ═══════════════════════════════════════════════════════════════
 #  ULTRA FAMILY TRACKER v5.0 — Database Layer
 # ═══════════════════════════════════════════════════════════════
-#  SQLite persistence layer.
-#
-#  Design:
-#  - WAL mode for concurrent reads during writes
-#  - Foreign keys enabled
-#  - Idempotent schema (CREATE TABLE IF NOT EXISTS)
-#  - All queries use parameter binding (no string interpolation)
-#  - Connection per thread (SQLite is not thread-safe by default)
-#
-#  Tables (15):
-#    1.  schema_version
-#    2.  devices
-#    3.  locations
-#    4.  locations_queue
-#    5.  commands
-#    6.  command_history
-#    7.  stops
-#    8.  stats_daily
-#    9.  geofences
-#    10. geofence_events
-#    11. alerts
-#    12. battery_log
-#    13. device_state
-#    14. pins
-#    15. settings
-#    16. audit_log
-#
-#  Note: schema_version is a meta-table, not counted in "15".
-# ═══════════════════════════════════════════════════════════════
 
 import os
 import sqlite3
@@ -48,20 +19,19 @@ _local = threading.local()
 
 
 def _get_conn() -> sqlite3.Connection:
-    """Get (or create) thread-local connection."""
     conn = getattr(_local, "conn", None)
     if conn is None:
         conn = sqlite3.connect(
             cfg.DB_PATH,
             timeout=30.0,
-            isolation_level=None,  # autocommit; we handle transactions
+            isolation_level=None,
             check_same_thread=False,
         )
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA synchronous=NORMAL")
         conn.execute("PRAGMA foreign_keys=ON")
-        conn.execute("PRAGMA cache_size=-64000")   # 64 MB
+        conn.execute("PRAGMA cache_size=-64000")
         conn.execute("PRAGMA temp_store=MEMORY")
         _local.conn = conn
     return conn
@@ -69,7 +39,6 @@ def _get_conn() -> sqlite3.Connection:
 
 @contextmanager
 def transaction() -> Iterator[sqlite3.Connection]:
-    """Context manager for a transaction."""
     conn = _get_conn()
     conn.execute("BEGIN")
     try:
@@ -81,7 +50,6 @@ def transaction() -> Iterator[sqlite3.Connection]:
 
 
 def close_all() -> None:
-    """Close the thread-local connection. Call on shutdown."""
     conn = getattr(_local, "conn", None)
     if conn is not None:
         try:
@@ -96,13 +64,11 @@ def close_all() -> None:
 # ───────────────────────────────────────────────────────────────
 
 SCHEMA_SQL = """
--- ═══ Meta: schema_version ═══
 CREATE TABLE IF NOT EXISTS schema_version (
     version     INTEGER PRIMARY KEY,
     applied_at  INTEGER NOT NULL
 );
 
--- ═══ 1. devices ═══
 CREATE TABLE IF NOT EXISTS devices (
     device_id        TEXT PRIMARY KEY,
     name             TEXT,
@@ -120,12 +86,9 @@ CREATE TABLE IF NOT EXISTS devices (
     CHECK (battery IS NULL OR (battery >= 0 AND battery <= 100))
 );
 
-CREATE INDEX IF NOT EXISTS idx_devices_last_seen
-    ON devices(last_seen DESC);
-CREATE INDEX IF NOT EXISTS idx_devices_active
-    ON devices(active);
+CREATE INDEX IF NOT EXISTS idx_devices_last_seen ON devices(last_seen DESC);
+CREATE INDEX IF NOT EXISTS idx_devices_active ON devices(active);
 
--- ═══ 2. locations ═══
 CREATE TABLE IF NOT EXISTS locations (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id    TEXT NOT NULL,
@@ -146,16 +109,11 @@ CREATE TABLE IF NOT EXISTS locations (
     CHECK (accuracy IS NULL OR accuracy >= 0)
 );
 
-CREATE INDEX IF NOT EXISTS idx_locations_dev_time
-    ON locations(device_id, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_locations_time
-    ON locations(timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_locations_event
-    ON locations(event_id);
-CREATE INDEX IF NOT EXISTS idx_locations_synced
-    ON locations(synced);
+CREATE INDEX IF NOT EXISTS idx_locations_dev_time ON locations(device_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_locations_time ON locations(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_locations_event ON locations(event_id);
+CREATE INDEX IF NOT EXISTS idx_locations_synced ON locations(synced);
 
--- ═══ 3. locations_queue (offline pending) ═══
 CREATE TABLE IF NOT EXISTS locations_queue (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id    TEXT NOT NULL UNIQUE,
@@ -165,10 +123,8 @@ CREATE TABLE IF NOT EXISTS locations_queue (
     created_at  INTEGER NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_queue_created
-    ON locations_queue(created_at);
+CREATE INDEX IF NOT EXISTS idx_queue_created ON locations_queue(created_at);
 
--- ═══ 4. commands ═══
 CREATE TABLE IF NOT EXISTS commands (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     command_id   TEXT NOT NULL UNIQUE,
@@ -182,12 +138,9 @@ CREATE TABLE IF NOT EXISTS commands (
     FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_commands_dev_status
-    ON commands(device_id, status);
-CREATE INDEX IF NOT EXISTS idx_commands_created
-    ON commands(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_commands_dev_status ON commands(device_id, status);
+CREATE INDEX IF NOT EXISTS idx_commands_created ON commands(created_at DESC);
 
--- ═══ 5. command_history ═══
 CREATE TABLE IF NOT EXISTS command_history (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     command_id   TEXT NOT NULL,
@@ -198,10 +151,8 @@ CREATE TABLE IF NOT EXISTS command_history (
     executed_at  INTEGER NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_history_dev
-    ON command_history(device_id, executed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_history_dev ON command_history(device_id, executed_at DESC);
 
--- ═══ 6. stops ═══
 CREATE TABLE IF NOT EXISTS stops (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     device_id        TEXT NOT NULL,
@@ -215,14 +166,12 @@ CREATE TABLE IF NOT EXISTS stops (
     FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_stops_dev_time
-    ON stops(device_id, start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_stops_dev_time ON stops(device_id, start_time DESC);
 
--- ═══ 7. stats_daily ═══
 CREATE TABLE IF NOT EXISTS stats_daily (
     id                 INTEGER PRIMARY KEY AUTOINCREMENT,
     device_id          TEXT NOT NULL,
-    date               TEXT NOT NULL,          -- YYYY-MM-DD
+    date               TEXT NOT NULL,
     distance_m         REAL NOT NULL DEFAULT 0,
     moving_seconds     INTEGER NOT NULL DEFAULT 0,
     stopped_seconds    INTEGER NOT NULL DEFAULT 0,
@@ -236,10 +185,8 @@ CREATE TABLE IF NOT EXISTS stats_daily (
     FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_stats_dev_date
-    ON stats_daily(device_id, date DESC);
+CREATE INDEX IF NOT EXISTS idx_stats_dev_date ON stats_daily(device_id, date DESC);
 
--- ═══ 8. geofences ═══
 CREATE TABLE IF NOT EXISTS geofences (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     device_id  TEXT NOT NULL,
@@ -253,24 +200,20 @@ CREATE TABLE IF NOT EXISTS geofences (
     CHECK (radius >= 10 AND radius <= 100000)
 );
 
-CREATE INDEX IF NOT EXISTS idx_geofences_dev_active
-    ON geofences(device_id, active);
+CREATE INDEX IF NOT EXISTS idx_geofences_dev_active ON geofences(device_id, active);
 
--- ═══ 9. geofence_events ═══
 CREATE TABLE IF NOT EXISTS geofence_events (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     device_id   TEXT NOT NULL,
     geofence_id INTEGER NOT NULL,
-    event_type  TEXT NOT NULL,       -- 'enter' | 'exit'
+    event_type  TEXT NOT NULL,
     timestamp   INTEGER NOT NULL,
     FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE,
     FOREIGN KEY (geofence_id) REFERENCES geofences(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_geo_events_dev_time
-    ON geofence_events(device_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_geo_events_dev_time ON geofence_events(device_id, timestamp DESC);
 
--- ═══ 10. alerts ═══
 CREATE TABLE IF NOT EXISTS alerts (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     device_id   TEXT NOT NULL,
@@ -282,12 +225,9 @@ CREATE TABLE IF NOT EXISTS alerts (
     FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_alerts_dev_created
-    ON alerts(device_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_alerts_delivered
-    ON alerts(delivered);
+CREATE INDEX IF NOT EXISTS idx_alerts_dev_created ON alerts(device_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alerts_delivered ON alerts(delivered);
 
--- ═══ 11. battery_log ═══
 CREATE TABLE IF NOT EXISTS battery_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     device_id   TEXT NOT NULL,
@@ -299,10 +239,8 @@ CREATE TABLE IF NOT EXISTS battery_log (
     CHECK (level IS NULL OR (level >= 0 AND level <= 100))
 );
 
-CREATE INDEX IF NOT EXISTS idx_battery_dev_time
-    ON battery_log(device_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_battery_dev_time ON battery_log(device_id, timestamp DESC);
 
--- ═══ 12. device_state ═══
 CREATE TABLE IF NOT EXISTS device_state (
     device_id       TEXT PRIMARY KEY,
     connection      INTEGER NOT NULL DEFAULT 1,
@@ -315,7 +253,6 @@ CREATE TABLE IF NOT EXISTS device_state (
     FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE
 );
 
--- ═══ 13. pins ═══
 CREATE TABLE IF NOT EXISTS pins (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     device_id   TEXT NOT NULL,
@@ -326,19 +263,15 @@ CREATE TABLE IF NOT EXISTS pins (
     FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_pins_dev_created
-    ON pins(device_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_pins_active
-    ON pins(device_id, revoked, expires_at);
+CREATE INDEX IF NOT EXISTS idx_pins_dev_created ON pins(device_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pins_active ON pins(device_id, revoked, expires_at);
 
--- ═══ 14. settings ═══
 CREATE TABLE IF NOT EXISTS settings (
     key         TEXT PRIMARY KEY,
     value       TEXT,
     updated_at  INTEGER NOT NULL
 );
 
--- ═══ 15. audit_log ═══
 CREATE TABLE IF NOT EXISTS audit_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp   INTEGER NOT NULL,
@@ -349,15 +282,13 @@ CREATE TABLE IF NOT EXISTS audit_log (
     details     TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_audit_time
-    ON audit_log(timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_actor
-    ON audit_log(actor, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_log(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_log(actor, timestamp DESC);
 """
 
 
 # ───────────────────────────────────────────────────────────────
-#  Initialization & migration
+#  Utilities
 # ───────────────────────────────────────────────────────────────
 
 def _now_ms() -> int:
@@ -382,13 +313,10 @@ def _set_schema_version(conn: sqlite3.Connection, version: int) -> None:
 
 
 def init_db() -> None:
-    """Create tables if missing. Idempotent."""
     conn = _get_conn()
     conn.executescript(SCHEMA_SQL)
-
     current = _get_schema_version(conn)
     if current < cfg.DB_SCHEMA_VERSION:
-        # Future migrations go here. For v1, just record the version.
         with transaction():
             _set_schema_version(conn, cfg.DB_SCHEMA_VERSION)
 
@@ -408,8 +336,7 @@ def register_device(
         conn.execute(
             """
             INSERT INTO devices
-                (device_id, name, model, android_version,
-                 last_seen, registered_at)
+                (device_id, name, model, android_version, last_seen, registered_at)
             VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(device_id) DO UPDATE SET
                 name            = COALESCE(excluded.name, devices.name),
@@ -460,17 +387,14 @@ def list_devices(only_active: bool = False) -> List[Dict[str, Any]]:
     conn = _get_conn()
     if only_active:
         cur = conn.execute(
-            "SELECT * FROM devices WHERE active = 1 ORDER BY last_seen DESC NULLS LAST"
+            "SELECT * FROM devices WHERE active = 1 ORDER BY last_seen DESC"
         )
     else:
-        cur = conn.execute(
-            "SELECT * FROM devices ORDER BY last_seen DESC NULLS LAST"
-        )
+        cur = conn.execute("SELECT * FROM devices ORDER BY last_seen DESC")
     return [dict(r) for r in cur.fetchall()]
 
 
 def delete_device(device_id: str) -> None:
-    """Delete device and cascade-delete all its data."""
     with transaction() as conn:
         conn.execute("DELETE FROM devices WHERE device_id = ?", (device_id,))
 
@@ -480,16 +404,13 @@ def delete_device(device_id: str) -> None:
 # ───────────────────────────────────────────────────────────────
 
 def save_location(device_id: str, data: Dict[str, Any]) -> int:
-    """Insert a location. Returns row id."""
     event_id = data.get("event_id") or ""
     if not event_id:
         import uuid
         event_id = str(uuid.uuid4())
-
     ts = data.get("timestamp") or _now_ms()
 
     with transaction() as conn:
-        # Idempotency: skip if event_id already exists
         cur = conn.execute(
             "SELECT id FROM locations WHERE event_id = ? LIMIT 1", (event_id,)
         )
@@ -507,24 +428,18 @@ def save_location(device_id: str, data: Dict[str, Any]) -> int:
             (
                 event_id, device_id,
                 float(data["lat"]), float(data["lon"]), int(ts),
-                data.get("accuracy"),
-                data.get("altitude"),
-                data.get("speed"),
-                data.get("bearing"),
-                data.get("source", "unknown"),
-                data.get("battery"),
+                data.get("accuracy"), data.get("altitude"),
+                data.get("speed"), data.get("bearing"),
+                data.get("source", "unknown"), data.get("battery"),
                 int(data.get("synced", 1)),
             ),
         )
         row_id = int(cur.lastrowid)
 
-        # Update device snapshot
         conn.execute(
             """
             UPDATE devices SET
-                last_lat  = ?,
-                last_lon  = ?,
-                last_seen = ?,
+                last_lat  = ?, last_lon  = ?, last_seen = ?,
                 battery   = COALESCE(?, battery)
             WHERE device_id = ?
             """,
@@ -536,12 +451,7 @@ def save_location(device_id: str, data: Dict[str, Any]) -> int:
 def get_last_location(device_id: str) -> Optional[Dict[str, Any]]:
     conn = _get_conn()
     cur = conn.execute(
-        """
-        SELECT * FROM locations
-        WHERE device_id = ?
-        ORDER BY timestamp DESC
-        LIMIT 1
-        """,
+        "SELECT * FROM locations WHERE device_id = ? ORDER BY timestamp DESC LIMIT 1",
         (device_id,),
     )
     row = cur.fetchone()
@@ -573,8 +483,7 @@ def count_locations(device_id: str, since: Optional[int] = None) -> int:
     conn = _get_conn()
     if since is None:
         cur = conn.execute(
-            "SELECT COUNT(*) AS n FROM locations WHERE device_id = ?",
-            (device_id,),
+            "SELECT COUNT(*) AS n FROM locations WHERE device_id = ?", (device_id,)
         )
     else:
         cur = conn.execute(
@@ -599,8 +508,7 @@ def add_command(device_id: str, command: str, payload: Optional[str] = None,
         conn.execute(
             """
             INSERT INTO commands
-                (command_id, device_id, command, payload, status,
-                 created_at, expires_at)
+                (command_id, device_id, command, payload, status, created_at, expires_at)
             VALUES (?, ?, ?, ?, 'queued', ?, ?)
             """,
             (command_id, device_id, command, payload, now, expires_at),
@@ -609,10 +517,8 @@ def add_command(device_id: str, command: str, payload: Optional[str] = None,
 
 
 def get_pending_commands(device_id: str, limit: int = 50) -> List[Dict[str, Any]]:
-    """Return queued commands and mark them as sent."""
     now = _now_ms()
     with transaction() as conn:
-        # Expire old commands first
         conn.execute(
             """
             UPDATE commands SET status = 'expired'
@@ -625,20 +531,17 @@ def get_pending_commands(device_id: str, limit: int = 50) -> List[Dict[str, Any]
             """
             SELECT * FROM commands
             WHERE device_id = ? AND status = 'queued'
-            ORDER BY created_at ASC
-            LIMIT ?
+            ORDER BY created_at ASC LIMIT ?
             """,
             (device_id, limit),
         )
         rows = [dict(r) for r in cur.fetchall()]
-
         if rows:
             ids = [r["id"] for r in rows]
             q = "UPDATE commands SET status = 'sent' WHERE id IN ({})".format(
                 ",".join("?" * len(ids))
             )
             conn.execute(q, ids)
-
     return rows
 
 
@@ -668,9 +571,7 @@ def get_command_history(device_id: str, limit: int = 100) -> List[Dict[str, Any]
     cur = conn.execute(
         """
         SELECT * FROM command_history
-        WHERE device_id = ?
-        ORDER BY executed_at DESC
-        LIMIT ?
+        WHERE device_id = ? ORDER BY executed_at DESC LIMIT ?
         """,
         (device_id, limit),
     )
@@ -699,14 +600,10 @@ def get_geofences(device_id: str, only_active: bool = True) -> List[Dict[str, An
     conn = _get_conn()
     if only_active:
         cur = conn.execute(
-            "SELECT * FROM geofences WHERE device_id = ? AND active = 1",
-            (device_id,),
+            "SELECT * FROM geofences WHERE device_id = ? AND active = 1", (device_id,)
         )
     else:
-        cur = conn.execute(
-            "SELECT * FROM geofences WHERE device_id = ?",
-            (device_id,),
-        )
+        cur = conn.execute("SELECT * FROM geofences WHERE device_id = ?", (device_id,))
     return [dict(r) for r in cur.fetchall()]
 
 
@@ -736,12 +633,7 @@ def add_alert(device_id: str, alert_type: str, message: str,
 def get_alerts(device_id: str, limit: int = 100) -> List[Dict[str, Any]]:
     conn = _get_conn()
     cur = conn.execute(
-        """
-        SELECT * FROM alerts
-        WHERE device_id = ?
-        ORDER BY created_at DESC
-        LIMIT ?
-        """,
+        "SELECT * FROM alerts WHERE device_id = ? ORDER BY created_at DESC LIMIT ?",
         (device_id, limit),
     )
     return [dict(r) for r in cur.fetchall()]
@@ -770,34 +662,25 @@ def log_battery(device_id: str, level: int, is_charging: bool,
 # ───────────────────────────────────────────────────────────────
 
 def cleanup_old_data() -> Dict[str, int]:
-    """Delete data past retention. Returns deleted counts per table."""
     now = _now_ms()
     day_ms = 24 * 3600 * 1000
     deleted: Dict[str, int] = {}
 
     with transaction() as conn:
-        cut_locations = now - cfg.RETENTION_LOCATIONS_DAYS * day_ms
-        cur = conn.execute(
-            "DELETE FROM locations WHERE timestamp < ?", (cut_locations,)
-        )
+        cut = now - cfg.RETENTION_LOCATIONS_DAYS * day_ms
+        cur = conn.execute("DELETE FROM locations WHERE timestamp < ?", (cut,))
         deleted["locations"] = cur.rowcount
 
-        cut_battery = now - cfg.RETENTION_BATTERY_DAYS * day_ms
-        cur = conn.execute(
-            "DELETE FROM battery_log WHERE timestamp < ?", (cut_battery,)
-        )
+        cut = now - cfg.RETENTION_BATTERY_DAYS * day_ms
+        cur = conn.execute("DELETE FROM battery_log WHERE timestamp < ?", (cut,))
         deleted["battery_log"] = cur.rowcount
 
-        cut_alerts = now - cfg.RETENTION_ALERTS_DAYS * day_ms
-        cur = conn.execute(
-            "DELETE FROM alerts WHERE created_at < ?", (cut_alerts,)
-        )
+        cut = now - cfg.RETENTION_ALERTS_DAYS * day_ms
+        cur = conn.execute("DELETE FROM alerts WHERE created_at < ?", (cut,))
         deleted["alerts"] = cur.rowcount
 
-        cut_audit = now - cfg.RETENTION_AUDIT_DAYS * day_ms
-        cur = conn.execute(
-            "DELETE FROM audit_log WHERE timestamp < ?", (cut_audit,)
-        )
+        cut = now - cfg.RETENTION_AUDIT_DAYS * day_ms
+        cur = conn.execute("DELETE FROM audit_log WHERE timestamp < ?", (cut,))
         deleted["audit_log"] = cur.rowcount
 
     return deleted
