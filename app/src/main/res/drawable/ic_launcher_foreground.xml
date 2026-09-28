@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ═══════════════════════════════════════════════════════════════
+     Family Admin v3.0 — Launcher Icon Foreground
+     Adaptive Icon Foreground Layer
+     ═══════════════════════════════════════════════════════════════
+     
+     Design:
+     ─────────────────────────────────────────────────────────────
+     • White shield (protection)
+     • Location pin inside (tracking)
+     • Concentric circle detail (focus)
+     • Centered in safe zone (72x72 dp)
+     
+     Safe Zone:
+     ─────────────────────────────────────────────────────────────
+     • Total: 108 x 108 dp
+     • Safe:  72 x 72 dp (centered)
+     • Padding: 18 dp each side
+     • Content must be within circle of radius 36dp from center
+     
+     ═══════════════════════════════════════════════════════════════
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LAYER 1: SHIELD OUTLINE (Main Symbol)
+         White shield centered at (54, 54)
+         Size: ~52 x 62 dp (fits safe zone)
+         ═══════════════════════════════════════════════════════════ -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,22 
+                          L80,32 
+                          L80,52 
+                          C80,68 68,80 54,86 
+                          C40,80 28,68 28,52 
+                          L28,32 
+                          Z" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LAYER 2: INNER SHIELD (Darker shade for depth)
+         Slightly smaller shield — creates outline effect
+         ═══════════════════════════════════════════════════════════ -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M54,26 
+                          L76,35 
+                          L76,52 
+                          C76,65 66,75 54,81 
+                          C42,75 32,65 32,52 
+                          L32,35 
+                          Z" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LAYER 3: LOCATION PIN (Inside shield)
+         Classic map pin shape — symbolizes tracking
+         ═══════════════════════════════════════════════════════════ -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,36 
+                          C49,36 45,40 45,45 
+                          C45,51 54,62 54,62 
+                          C54,62 63,51 63,45 
+                          C63,40 59,36 54,36 
+                          Z" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LAYER 4: INNER CIRCLE OF PIN (Hole in pin)
+         Blue dot in center of pin — makes it recognizable
+         ═══════════════════════════════════════════════════════════ -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M54,45 
+                          m-3,0 
+                          a3,3 0 1,0 6,0 
+                          a3,3 0 1,0 -6,0 
+                          Z" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LAYER 5: SIGNAL WAVES (Tracking indicator)
+         Two curved lines — represent location signal
+         Positioned at bottom of shield
+         ═══════════════════════════════════════════════════════════ -->
+    
+    <!-- Wave 1 (small) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,68 
+                          C48,70 50,71 54,71 
+                          C58,71 60,70 62,68 
+                          L60,66 
+                          C58,67 56,68 54,68 
+                          C52,68 50,67 48,66 
+                          Z" />
+
+    <!-- Wave 2 (medium) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,72 
+                          C46,75 50,77 54,77 
+                          C58,77 62,75 66,72 
+                          L64,70 
+                          C61,72 58,73 54,73 
+                          C50,73 47,72 44,70 
+                          Z" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LAYER 6: GLOW HIGHLIGHTS
+         Subtle white accents for depth
+         ═══════════════════════════════════════════════════════════ -->
+    
+    <!-- Top-left shine on shield -->
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M54,22 
+                          L80,32 
+                          L80,36 
+                          L54,26 
+                          L28,36 
+                          L28,32 
+                          Z" />
+
+</vector>
