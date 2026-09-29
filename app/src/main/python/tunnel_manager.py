@@ -1,38 +1,6 @@
 # ═══════════════════════════════════════════════════════════════
 #  ULTRA FAMILY TRACKER v5.0 — Smart Tunnel Manager
 # ═══════════════════════════════════════════════════════════════
-#  Purpose:
-#    Manage one or more public tunnels (Cloudflare, ngrok, custom)
-#    with automatic failover, health monitoring, and self-healing.
-#
-#  Architecture:
-#    Python side (this file):
-#      - State machine
-#      - Watchdog thread
-#      - URL change detection
-#      - Persistence
-#      - Callbacks to Kotlin / server / clients
-#
-#    Kotlin side (TunnelService.kt):
-#      - Actually spawns cloudflared / ngrok binary
-#      - Returns URL from stdout
-#      - Reports health
-#
-#  Provider model:
-#    A "provider" is a logical name (e.g. "cloudflare", "ngrok").
-#    Each provider has its own Kotlin bridge callables.
-#    The manager picks the active provider and can fail over.
-#
-#  Contract with Kotlin:
-#    For each provider, Kotlin calls:
-#        tunnel_manager.register_provider(
-#            name       = "cloudflare",
-#            start_cb   = <callable() -> str>,      # returns URL or ""
-#            stop_cb    = <callable() -> bool>,
-#            status_cb  = <callable() -> dict>,     # {"running": bool, "url": str}
-#            health_cb  = <callable() -> bool>,     # optional
-#        )
-# ═══════════════════════════════════════════════════════════════
 
 import time
 import threading
@@ -41,27 +9,19 @@ from typing import Optional, Dict, Any, Callable, List
 import database as db
 
 
-# ───────────────────────────────────────────────────────────────
-#  Constants
-# ───────────────────────────────────────────────────────────────
-
 SETTING_TUNNEL_URL = "tunnel.public_url"
 SETTING_TUNNEL_PROVIDER = "tunnel.provider"
 SETTING_TUNNEL_STARTED_AT = "tunnel.started_at"
 SETTING_TUNNEL_HISTORY = "tunnel.history"
 
-WATCHDOG_INTERVAL = 30             # seconds between health checks
-HEALTH_TIMEOUT = 15                # seconds max per health probe
-RESTART_BACKOFF_BASE = 5           # seconds
-RESTART_BACKOFF_MAX = 300          # 5 minutes cap
-CIRCUIT_BREAKER_THRESHOLD = 5      # consecutive failures
-CIRCUIT_BREAKER_COOLDOWN = 600     # 10 minutes
+WATCHDOG_INTERVAL = 30
+HEALTH_TIMEOUT = 15
+RESTART_BACKOFF_BASE = 5
+RESTART_BACKOFF_MAX = 300
+CIRCUIT_BREAKER_THRESHOLD = 5
+CIRCUIT_BREAKER_COOLDOWN = 600
 HISTORY_MAX = 20
 
-
-# ───────────────────────────────────────────────────────────────
-#  Logging
-# ───────────────────────────────────────────────────────────────
 
 def _log(msg: str) -> None:
     from datetime import datetime
@@ -69,13 +29,7 @@ def _log(msg: str) -> None:
     print(f"[{ts}] [TUNNEL] {msg}", flush=True)
 
 
-# ───────────────────────────────────────────────────────────────
-#  Provider
-# ───────────────────────────────────────────────────────────────
-
 class Provider:
-    """A single tunnel provider backed by Kotlin callables."""
-
     __slots__ = (
         "name", "start_cb", "stop_cb", "status_cb", "health_cb",
         "priority", "enabled",
@@ -123,17 +77,12 @@ class Provider:
 
     def health(self) -> bool:
         if not self.health_cb:
-            # No health callback → assume OK
             return True
         try:
             return bool(self.health_cb())
         except Exception:
             return False
 
-
-# ───────────────────────────────────────────────────────────────
-#  Manager state
-# ───────────────────────────────────────────────────────────────
 
 class TunnelManager:
     def __init__(self):
@@ -144,7 +93,6 @@ class TunnelManager:
         self._started_at: int = 0
         self._lock = threading.RLock()
 
-        # Health/watchdog
         self._watchdog_thread: Optional[threading.Thread] = None
         self._watchdog_stop = threading.Event()
         self._last_health_at: int = 0
@@ -153,11 +101,9 @@ class TunnelManager:
         self._circuit_open_until: int = 0
         self._next_retry_at: int = 0
 
-        # Callbacks
         self._on_url_change: Optional[Callable[[str, str], None]] = None
         self._on_health_change: Optional[Callable[[bool], None]] = None
 
-        # Metrics
         self._metrics = {
             "starts_total": 0,
             "stops_total": 0,
@@ -168,7 +114,6 @@ class TunnelManager:
             "health_failures_total": 0,
         }
 
-        # History: [{url, provider, at}, ...]
         self._history: List[Dict[str, Any]] = []
         self._load_persisted()
 
@@ -286,7 +231,7 @@ class TunnelManager:
             try:
                 cb(old, new)
             except Exception as e:
-                _log(f"⚠️ on_url_change callback raised: {e}")
+                _log(f"⚠️ on_url_change raised: {e}")
 
     def _emit_health_change(self, ok: bool) -> None:
         with self._lock:
@@ -295,17 +240,13 @@ class TunnelManager:
             try:
                 cb(ok)
             except Exception as e:
-                _log(f"⚠️ on_health_change callback raised: {e}")
+                _log(f"⚠️ on_health_change raised: {e}")
 
     # ─────────────────────────────────────────────────────────
     #  Start / Stop
     # ─────────────────────────────────────────────────────────
 
     def start(self, prefer: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Start tunnel using preferred provider or the highest-priority one.
-        On failure, tries the next provider.
-        """
         with self._lock:
             if self._running and self._current_url:
                 return self._snapshot()
@@ -351,7 +292,7 @@ class TunnelManager:
                 return self._snapshot()
             else:
                 last_error = f"provider_{p.name}_failed"
-                _log(f"⚠️ Provider {p.name} failed")
+                _log(f"⚠️ Provider {p.name} failed (returned empty URL)")
 
         with self._lock:
             self._consecutive_failures += 1
@@ -378,7 +319,6 @@ class TunnelManager:
         return self._snapshot()
 
     def force_restart(self) -> Dict[str, Any]:
-        """Stop current tunnel, then start fresh."""
         with self._lock:
             self._metrics["restarts_total"] += 1
         _log("🔄 Force restart requested")
@@ -387,7 +327,7 @@ class TunnelManager:
         return self.start()
 
     # ─────────────────────────────────────────────────────────
-    #  Circuit breaker / retry scheduling
+    #  Circuit breaker / retry
     # ─────────────────────────────────────────────────────────
 
     def _is_circuit_open(self) -> bool:
@@ -442,7 +382,6 @@ class TunnelManager:
         if provider is None:
             return
 
-        # Health check
         with self._lock:
             self._metrics["health_checks_total"] += 1
             self._last_health_at = int(time.time() * 1000)
@@ -455,7 +394,6 @@ class TunnelManager:
         self._emit_health_change(ok)
 
         if ok:
-            # Also verify URL didn't change silently
             st = provider.status()
             new_url = (st.get("url") or "").strip()
             if new_url and new_url != self._current_url:
@@ -468,7 +406,7 @@ class TunnelManager:
                 self._emit_url_change(old, new_url)
                 _log(f"🔀 URL changed: {old} → {new_url}")
         else:
-            _log("❌ Watchdog health check failed — restarting tunnel")
+            _log("❌ Watchdog health failed — restarting")
             self._schedule_next_retry()
             self.force_restart()
 
@@ -551,7 +489,7 @@ def get_manager() -> TunnelManager:
 
 
 # ───────────────────────────────────────────────────────────────
-#  Module-level API (Kotlin-facing, same as v1 for compatibility)
+#  Module-level API
 # ───────────────────────────────────────────────────────────────
 
 def register_provider(name: str,
@@ -573,8 +511,8 @@ def unregister_all() -> None:
         m.unregister_provider(p["name"])
 
 
-# Backwards-compatible alias used by earlier step
 def register_tunnel_bridge(start_cb, stop_cb, status_cb=None):
+    """Backward-compatible alias."""
     register_provider(
         name="cloudflare",
         start_cb=start_cb,
@@ -629,7 +567,7 @@ def on_health_change(cb: Callable[[bool], None]) -> None:
 
 
 # ───────────────────────────────────────────────────────────────
-#  HTTP-facing helpers (used by server.py)
+#  HTTP-facing helpers
 # ───────────────────────────────────────────────────────────────
 
 def http_status() -> Dict[str, Any]:
@@ -654,3 +592,43 @@ def http_start() -> Dict[str, Any]:
 
 def http_stop() -> Dict[str, Any]:
     return stop_tunnel()
+
+
+# ───────────────────────────────────────────────────────────────
+#  Kotlin-facing: TunnelService updates URL here
+# ───────────────────────────────────────────────────────────────
+
+def set_external_url(url: str) -> None:
+    """
+    Called from Kotlin TunnelService when:
+      - cloudflared gives a public URL
+      - tunnel stops (url = "")
+    Updates the singleton state so HTTP endpoints reflect reality.
+    """
+    try:
+        mgr = get_manager()
+        with mgr._lock:
+            old = mgr._current_url
+            mgr._current_url = url or ""
+            mgr._running = bool(url)
+            mgr._active_provider = "cloudflare-kotlin" if url else None
+            if url:
+                mgr._started_at = int(time.time() * 1000)
+                mgr._record_history(url, "cloudflare-kotlin")
+            else:
+                mgr._started_at = 0
+        if url != old:
+            mgr._emit_url_change(old, url)
+            mgr._persist_current()
+        _log(f"Python state synced: url='{url}'")
+    except Exception as e:
+        _log(f"⚠️ set_external_url failed: {e}")
+
+
+def get_external_url() -> str:
+    """Read the URL currently set by Kotlin."""
+    return get_manager().get_url()
+
+
+def is_external_running() -> bool:
+    return get_manager().is_running()
