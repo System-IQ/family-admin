@@ -1,7 +1,6 @@
 package com.family.admin
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -16,17 +15,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.chaquo.python.Python
 import com.family.admin.services.ServerService
 import com.family.admin.services.TunnelService
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import timber.log.Timber
 
-/**
- * ═══════════════════════════════════════════════════════════════
- *  Family Admin v5.0 — MainActivity (Phase 4.7)
- *  ═══════════════════════════════════════════════════════════════
- */
 class MainActivity : AppCompatActivity() {
 
     companion object {
@@ -35,8 +28,9 @@ class MainActivity : AppCompatActivity() {
         private const val REFRESH_MS = 2_000L
     }
 
-    // Server views
     private lateinit var toolbar: Toolbar
+
+    // Server views
     private lateinit var tvServerStatus: TextView
     private lateinit var tvServerResult: TextView
     private lateinit var tvServerPort: TextView
@@ -63,26 +57,16 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         Log.i(TAG, "onCreate")
 
         bindViews()
         setupToolbar()
         requestNotificationPermissionIfNeeded()
 
-        // Auto-start ServerService
         if (!ServerService.isRunning) {
-            Log.i(TAG, "Auto-starting ServerService")
+            Log.i(TAG, "Auto-start ServerService")
             ServerService.start(this)
         }
-
-        // Auto-start TunnelService (after 3s to let Python boot)
-        handler.postDelayed({
-            if (!TunnelService.isRunning) {
-                Log.i(TAG, "Auto-starting TunnelService")
-                startTunnelViaPython()
-            }
-        }, 3_000L)
 
         btnServerToggle.setOnClickListener { onServerToggle() }
         btnTunnelToggle.setOnClickListener { onTunnelToggle() }
@@ -98,20 +82,14 @@ class MainActivity : AppCompatActivity() {
         handler.removeCallbacks(refreshRunnable)
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Views
-    // ═══════════════════════════════════════════════════════════
-
     private fun bindViews() {
         toolbar = findViewById(R.id.toolbar)
-
         tvServerStatus = findViewById(R.id.tvServerStatus)
         tvServerResult = findViewById(R.id.tvServerResult)
         tvServerPort = findViewById(R.id.tvServerPort)
         tvServerError = findViewById(R.id.tvServerError)
         btnServerToggle = findViewById(R.id.btnServerToggle)
         progressServer = findViewById(R.id.progressServer)
-
         tvTunnelStatus = findViewById(R.id.tvTunnelStatus)
         tvTunnelUrl = findViewById(R.id.tvTunnelUrl)
         tvTunnelError = findViewById(R.id.tvTunnelError)
@@ -122,12 +100,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupToolbar() {
         setSupportActionBar(toolbar)
         supportActionBar?.title = getString(R.string.app_name)
-        supportActionBar?.subtitle = getString(R.string.app_version)
+        supportActionBar?.subtitle = "v5.0.0"
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Server toggle
-    // ═══════════════════════════════════════════════════════════
+    // ═══ SERVER ═══
 
     private fun onServerToggle() {
         if (ServerService.isRunning) {
@@ -155,51 +131,23 @@ class MainActivity : AppCompatActivity() {
         } else {
             tvServerError.visibility = View.GONE
         }
-
-        progressServer.visibility =
-            if (!running && result != "stopped" && result != "not_started") View.VISIBLE
-            else View.GONE
-
+        progressServer.visibility = View.GONE
         btnServerToggle.text = if (running) "🛑 Stop Server" else "▶ Start Server"
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Tunnel toggle — via Python bridge
-    // ═══════════════════════════════════════════════════════════
+    // ═══ TUNNEL — direct call, no Python bridge ═══
 
     private fun onTunnelToggle() {
         if (TunnelService.isRunning) {
-            stopTunnelViaPython()
+            Log.i(TAG, "Stopping TunnelService directly")
+            TunnelService.stop(this)
+            Toast.makeText(this, "Stopping tunnel…", Toast.LENGTH_SHORT).show()
         } else {
-            startTunnelViaPython()
+            Log.i(TAG, "Starting TunnelService directly")
+            TunnelService.start(this)
+            Toast.makeText(this, "Starting tunnel…", Toast.LENGTH_SHORT).show()
         }
         handler.postDelayed({ renderTunnel() }, 500)
-    }
-
-    private fun startTunnelViaPython() {
-        Thread {
-            try {
-                val py = Python.getInstance()
-                val mod = py.getModule("tunnel_manager")
-                val res = mod.callAttr("start_tunnel", "cloudflare")
-                Log.i(TAG, "Python start_tunnel → $res")
-            } catch (t: Throwable) {
-                Log.e(TAG, "startTunnelViaPython failed", t)
-            }
-        }.start()
-    }
-
-    private fun stopTunnelViaPython() {
-        Thread {
-            try {
-                val py = Python.getInstance()
-                val mod = py.getModule("tunnel_manager")
-                val res = mod.callAttr("stop_tunnel")
-                Log.i(TAG, "Python stop_tunnel → $res")
-            } catch (t: Throwable) {
-                Log.e(TAG, "stopTunnelViaPython failed", t)
-            }
-        }.start()
     }
 
     private fun renderTunnel() {
@@ -226,16 +174,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             tvTunnelError.visibility = View.GONE
         }
-
-        progressTunnel.visibility =
-            if (running && url.isNullOrBlank()) View.VISIBLE else View.GONE
-
+        progressTunnel.visibility = if (running && url.isNullOrBlank()) View.VISIBLE else View.GONE
         btnTunnelToggle.text = if (running) "🛑 Stop Tunnel" else "🌐 Start Tunnel"
     }
-
-    // ═══════════════════════════════════════════════════════════
-    //  Permissions
-    // ═══════════════════════════════════════════════════════════
 
     private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
