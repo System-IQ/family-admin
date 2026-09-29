@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.chaquo.python.Python
 import com.family.admin.MainActivity
 import com.family.admin.R
 import java.io.BufferedReader
@@ -26,20 +27,12 @@ import java.util.regex.Pattern
  *  server (127.0.0.1:5000) to the public internet via Cloudflare
  *  Quick Tunnel (*.trycloudflare.com).
  *
- *  Why a Service?
- *    • Long-running task (hours/days)
- *    • Needs foreground notification
- *    • Must survive app background
- *
- *  Why "libcloudflared.so"?
- *    Android 10+ blocks exec() from /data/data, but permits it
- *    from nativeLibraryDir (where .so files are extracted).
- *    So the cloudflared binary is packaged as a .so and executed
- *    from that directory.
+ *  After finding the URL, syncs it to Python tunnel_manager so
+ *  that HTTP endpoints reflect the live state.
  *
  *  Lifecycle:
  *    onCreate   → locate binary, start process, parse URL
- *    onDestroy  → destroy process, clear state
+ *    onDestroy  → destroy process, clear state, sync "" to Python
  * ═══════════════════════════════════════════════════════════════
  */
 class TunnelService : Service() {
@@ -107,6 +100,8 @@ class TunnelService : Service() {
         process = null
         isRunning = false
         publicUrl = null
+        // Notify Python that tunnel is gone
+        syncUrlToPython("")
         super.onDestroy()
     }
 
@@ -121,6 +116,7 @@ class TunnelService : Service() {
                 lastError = "cloudflared binary not found"
                 isRunning = false
                 updateNotification("Tunnel failed: binary not found")
+                Log.e(TAG, "Binary not found in nativeLibraryDir")
                 return
             }
 
@@ -134,6 +130,7 @@ class TunnelService : Service() {
             }
 
             Log.i(TAG, "Binary: ${binary.absolutePath}")
+            Log.i(TAG, "Binary size: ${binary.length()} bytes")
 
             val cmd = listOf(
                 binary.absolutePath,
@@ -165,6 +162,8 @@ class TunnelService : Service() {
                         lastError = null
                         Log.i(TAG, "Public URL: $publicUrl")
                         updateNotification("Tunnel: $publicUrl")
+                        // Sync URL to Python tunnel_manager
+                        syncUrlToPython(publicUrl)
                     }
                 }
             }
@@ -173,11 +172,14 @@ class TunnelService : Service() {
             val exit = try { process?.exitValue() } catch (_: Throwable) { -1 }
             Log.w(TAG, "cloudflared exited with $exit")
             isRunning = false
+            publicUrl = null
+            syncUrlToPython("")
             updateNotification("Tunnel stopped (exit=$exit)")
         } catch (t: Throwable) {
             Log.e(TAG, "runTunnel failed", t)
             lastError = t.message ?: t.javaClass.simpleName
             isRunning = false
+            syncUrlToPython("")
             updateNotification("Tunnel error: $lastError")
         }
     }
@@ -188,15 +190,56 @@ class TunnelService : Service() {
 
     private fun resolveBinary(): File? {
         val nativeDir = applicationInfo.nativeLibraryDir
-        val path = File(nativeDir, "libcloudflared.so")
-        Log.i(TAG, "Looking for: ${path.absolutePath}")
-        if (path.exists()) return path
+        Log.i(TAG, "nativeLibraryDir = $nativeDir")
 
-        // Fallback: some builds use "libcloudflared.so" without lib prefix
+        // Primary: libcloudflared.so extracted to nativeLibraryDir
+        val path = File(nativeDir, "libcloudflared.so")
+        if (path.exists()) {
+            Log.i(TAG, "Found libcloudflared.so (${path.length()} bytes)")
+            return path
+        }
+
+        // Fallback: some builds drop the "lib" prefix
         val alt = File(nativeDir, "cloudflared")
-        if (alt.exists()) return alt
+        if (alt.exists()) {
+            Log.i(TAG, "Found cloudflared (${alt.length()} bytes)")
+            return alt
+        }
+
+        // Last resort: list what's there for debugging
+        try {
+            val dir = File(nativeDir)
+            val files = dir.listFiles()
+            if (files != null) {
+                Log.e(TAG, "nativeLibraryDir contents:")
+                for (f in files) {
+                    Log.e(TAG, "  ${f.name} (${f.length()} bytes)")
+                }
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "listFiles failed: ${t.message}")
+        }
 
         return null
+    }
+
+    // ─────────────────────────────────────────────────────────
+    //  Sync URL to Python
+    // ─────────────────────────────────────────────────────────
+
+    private fun syncUrlToPython(url: String?) {
+        try {
+            if (!Python.isStarted()) {
+                Log.w(TAG, "Python not started, skip sync")
+                return
+            }
+            val py = Python.getInstance()
+            val mod = py.getModule("tunnel_manager")
+            mod.callAttr("set_external_url", url ?: "")
+            Log.i(TAG, "Python synced: url='$url'")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Python sync failed: ${t.message}")
+        }
     }
 
     // ─────────────────────────────────────────────────────────
